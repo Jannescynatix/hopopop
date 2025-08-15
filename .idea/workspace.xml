@@ -645,6 +645,8 @@
       <change afterPath="$PROJECT_DIR$/../untitled/package.json" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/../untitled15/.idea/untitled15.iml" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/../untitled67/.idea/untitled67.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -744,7 +746,7 @@
       <updated>1755262667133</updated>
       <workItem from="1755262670790" duration="3137000" />
       <workItem from="1755268257639" duration="1154000" />
-      <workItem from="1755269775499" duration="392000" />
+      <workItem from="1755269775499" duration="1370000" />
     </task>
     <servers />
   </component>

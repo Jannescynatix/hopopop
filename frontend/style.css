@@ -1,12 +1,13 @@
-/* frontend/style.css */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #f0f2f5;
     color: #333;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
+    padding: 20px;
     margin: 0;
 }
 .container {
@@ -17,10 +18,15 @@ body {
     width: 90%;
     max-width: 600px;
     text-align: center;
+    margin-bottom: 20px;
 }
 h1 {
     color: #007BFF;
     margin-bottom: 10px;
+}
+h2 {
+    color: #333;
+    margin-bottom: 15px;
 }
 p {
     color: #666;
@@ -95,4 +101,77 @@ button:hover {
 }
 #ki-label {
     color: #dc3545;
+}
+
+/* Neue Stile für Trainingsdaten */
+.training-container {
+    margin-top: 40px;
+}
+.add-text-form {
+    margin-bottom: 20px;
+}
+.add-text-form textarea {
+    min-height: 100px;
+}
+.button-group {
+    display: flex;
+    justify-content: space-around;
+    gap: 10px;
+}
+.ki-btn, .mensch-btn {
+    padding: 10px 15px;
+    font-size: 16px;
+    margin-top: 10px;
+    width: 50%;
+}
+.ki-btn {
+    background-color: #dc3545;
+}
+.ki-btn:hover {
+    background-color: #b52b39;
+}
+.mensch-btn {
+    background-color: #28a745;
+}
+.mensch-btn:hover {
+    background-color: #218838;
+}
+#training-data-view {
+    text-align: left;
+    margin-top: 20px;
+}
+#training-data-view h3, #training-data-view h4 {
+    margin: 10px 0;
+    color: #555;
+}
+.data-section {
+    border-top: 1px solid #ddd;
+    padding-top: 10px;
+}
+ul {
+    list-style-type: none;
+    padding: 0;
+}
+ul li {
+    background: #f1f1f1;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+}
+ul li button {
+    background: none;
+    border: none;
+    color: #dc3545;
+    cursor: pointer;
+    font-size: 16px;
+    margin: 0;
+    padding: 0;
+    transition: color 0.2s;
+}
+ul li button:hover {
+    color: #b52b39;
 }
