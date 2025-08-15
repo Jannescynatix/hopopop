@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const kiList = document.getElementById('ki-list');
 
     // **WICHTIG:** URL Ihrer gehosteten Render-App
-    const API_BASE_URL = 'https://ihre-ki-detektor-app.onrender.com';
+    const API_BASE_URL = 'https://b-kb9u.onrender.com';
 
     // Funktion zum Abrufen und Anzeigen der Trainingsdaten
     const fetchAndDisplayData = async () => {
