@@ -3,59 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KI-Text-Detektor</title>
+    <title>KI-Text-Detektor Pro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<header>
+    <nav>
+        <div class="logo">KI-Detektor</div>
+        <ul>
+            <li><a href="#" class="nav-link active" data-target="main-app">Analyse</a></li>
+            <li><a href="#" class="nav-link" data-target="admin-panel">Admin-Panel</a></li>
+        </ul>
+    </nav>
+</header>
 
-<div id="main-app" class="container">
-    <h1>KI-Text-Detektor</h1>
-    <p>Geben Sie einen Text ein, um zu erfahren, ob er wahrscheinlich von einem Menschen oder einer KI geschrieben wurde.</p>
-    <textarea id="text-input" placeholder="Geben Sie hier Ihren Text ein..." required></textarea>
-    <button id="analyze-btn">Analysieren</button>
-    <div id="result-container" class="hidden">
-        <p id="result-text"></p>
-        <div class="progress-bar-container">
-            <div class="progress-bar mensch-bar"></div>
-            <div class="progress-bar ki-bar"></div>
-        </div>
-        <div class="probability-labels">
-            <span id="mensch-label"></span>
-            <span id="ki-label"></span>
-        </div>
-    </div>
-    <hr>
-    <button id="admin-login-btn">Admin-Login</button>
-</div>
-
-<div id="admin-panel" class="container hidden">
-    <h2>Admin-Panel - Trainingsdaten</h2>
-    <div id="login-form">
-        <p>Bitte geben Sie das Admin-Passwort ein.</p>
-        <input type="password" id="admin-password-input" placeholder="Passwort" autocomplete="off">
-        <button id="password-submit-btn">Login</button>
-        <p id="login-error-msg" class="error-msg"></p>
-    </div>
-    <div id="training-data-view" class="hidden">
-        <h3>Trainingsdaten bearbeiten</h3>
-        <p>Fügen Sie neue menschliche oder KI-Texte hinzu und speichern Sie, um das Modell neu zu trainieren.</p>
-
-        <div class="add-data-section">
-            <textarea id="new-text-input" placeholder="Neuen Text hinzufügen..."></textarea>
-            <div class="add-buttons">
-                <button id="add-human-btn">Als Menschlich hinzufügen</button>
-                <button id="add-ki-btn">Als KI hinzufügen</button>
+<main id="main-app" class="page-section active">
+    <div class="container">
+        <h1>KI-Text-Detektor Pro</h1>
+        <p>Geben Sie einen Text ein, um die Wahrscheinlichkeit zu erfahren, ob er von einem Menschen oder einer KI geschrieben wurde.</p>
+        <textarea id="text-input" placeholder="Geben Sie hier Ihren Text ein..." required></textarea>
+        <button id="analyze-btn"><i class="fas fa-search"></i> Analysieren</button>
+        <div id="result-container" class="hidden">
+            <p id="result-text"></p>
+            <div class="progress-bar-container">
+                <div class="progress-bar mensch-bar"></div>
+                <div class="progress-bar ki-bar"></div>
+            </div>
+            <div class="probability-labels">
+                <span id="mensch-label"></span>
+                <span id="ki-label"></span>
             </div>
         </div>
-
-        <h4>Aktuelle Daten:</h4>
-        <ul id="data-list"></ul>
-
-        <button id="save-data-btn">Speichern und Modell neu trainieren</button>
-        <p id="save-status-msg"></p>
-        <button id="back-to-main-btn">Zurück zur Hauptseite</button>
     </div>
-</div>
+</main>
+
+<section id="admin-panel" class="page-section hidden">
+    <div class="container">
+        <h2>Admin-Panel - Trainingsdaten</h2>
+
+        <div id="login-form">
+            <p>Bitte geben Sie das Admin-Passwort ein.</p>
+            <input type="password" id="admin-password-input" placeholder="Passwort" autocomplete="off">
+            <button id="password-submit-btn"><i class="fas fa-sign-in-alt"></i> Login</button>
+            <p id="login-error-msg" class="error-msg"></p>
+        </div>
+
+        <div id="training-data-view" class="hidden">
+            <h3>Daten bearbeiten</h3>
+            <div class="data-stats">
+                <div class="stat-box">
+                    <i class="fas fa-user"></i>
+                    <span id="human-count">0</span>
+                    <p>Menschliche Texte</p>
+                </div>
+                <div class="stat-box">
+                    <i class="fas fa-robot"></i>
+                    <span id="ki-count">0</span>
+                    <p>KI-Texte</p>
+                </div>
+            </div>
+
+            <div class="add-data-section">
+                <textarea id="new-text-input" placeholder="Neuen Text hinzufügen..."></textarea>
+                <div class="add-buttons">
+                    <button id="add-human-btn"><i class="fas fa-user-plus"></i> Als Menschlich hinzufügen</button>
+                    <button id="add-ki-btn"><i class="fas fa-robot"></i> Als KI hinzufügen</button>
+                </div>
+            </div>
+
+            <ul id="data-list"></ul>
+            <p id="save-status-msg" class="status-msg"></p>
+        </div>
+    </div>
+</section>
+
+<footer>
+    <p>&copy; 2025 KI-Text-Detektor Pro. Alle Rechte vorbehalten.</p>
+</footer>
 
 <script src="script.js"></script>
 </body>

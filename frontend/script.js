@@ -1,8 +1,11 @@
 // frontend/script.js
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Haupt-App-Elemente
-    const mainApp = document.getElementById('main-app');
+    // Navigations-Elemente
+    const navLinks = document.querySelectorAll('.nav-link');
+    const pages = document.querySelectorAll('.page-section');
+
+    // App-Elemente
     const analyzeBtn = document.getElementById('analyze-btn');
     const textInput = document.getElementById('text-input');
     const resultContainer = document.getElementById('result-container');
@@ -11,10 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const menschBar = document.querySelector('.mensch-bar');
     const kiLabel = document.getElementById('ki-label');
     const menschLabel = document.getElementById('mensch-label');
-    const adminLoginBtn = document.getElementById('admin-login-btn');
 
     // Admin-Panel-Elemente
-    const adminPanel = document.getElementById('admin-panel');
     const loginForm = document.getElementById('login-form');
     const passwordInput = document.getElementById('admin-password-input');
     const passwordSubmitBtn = document.getElementById('password-submit-btn');
@@ -24,17 +25,31 @@ document.addEventListener('DOMContentLoaded', () => {
     const addHumanBtn = document.getElementById('add-human-btn');
     const addKiBtn = document.getElementById('add-ki-btn');
     const dataList = document.getElementById('data-list');
-    const saveDataBtn = document.getElementById('save-data-btn');
     const saveStatusMsg = document.getElementById('save-status-msg');
-    const backToMainBtn = document.getElementById('back-to-main-btn');
+    const humanCountSpan = document.getElementById('human-count');
+    const kiCountSpan = document.getElementById('ki-count');
 
-    // **WICHTIG:** Ersetze DIESE URL durch die URL deiner gehosteten Render-App
+    // **WICHTIG:** Ersetzen Sie DIESE URL durch die URL Ihrer gehosteten Render-App
     const API_BASE_URL = 'https://b-kb9u.onrender.com';
-    const PREDICT_URL = `${API_BASE_URL}/predict`;
-    const GET_DATA_URL = `${API_BASE_URL}/get_data`;
-    const SAVE_DATA_URL = `${API_BASE_URL}/save_data`;
-
     let currentTrainingData = [];
+
+    // --- Navigations-Logik ---
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetId = e.target.dataset.target;
+
+            // Verstecke alle Seiten
+            pages.forEach(page => page.classList.remove('active'));
+            // Zeige die Zielseite
+            document.getElementById(targetId).classList.add('active');
+
+            // Deaktiviere alle Nav-Links
+            navLinks.forEach(navLink => navLink.classList.remove('active'));
+            // Aktiviere den geklickten Link
+            link.classList.add('active');
+        });
+    });
 
     // --- Haupt-App-Logik ---
     analyzeBtn.addEventListener('click', async () => {
@@ -50,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
         analyzeBtn.textContent = 'Analysiere...';
 
         try {
-            const response = await fetch(PREDICT_URL, {
+            const response = await fetch(`${API_BASE_URL}/predict`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ text: text })
@@ -62,16 +77,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const kiProb = data.ki;
                 const menschProb = data.menschlich;
 
-                // Ergebnis anzeigen
                 resultContainer.classList.remove('hidden');
-
                 if (kiProb > menschProb) {
                     resultText.textContent = `Dieser Text wurde wahrscheinlich von einer KI generiert.`;
                 } else {
                     resultText.textContent = `Dieser Text wurde wahrscheinlich von einem Menschen geschrieben.`;
                 }
-
-                // Fortschrittsbalken aktualisieren
                 kiBar.style.width = `${kiProb}%`;
                 menschBar.style.width = `${menschProb}%`;
                 kiLabel.textContent = `KI: ${kiProb}%`;
@@ -85,124 +96,147 @@ document.addEventListener('DOMContentLoaded', () => {
             resultText.textContent = 'Es gab ein Problem bei der Verbindung zur API.';
         } finally {
             analyzeBtn.disabled = false;
-            analyzeBtn.textContent = 'Analysieren';
+            analyzeBtn.innerHTML = '<i class="fas fa-search"></i> Analysieren';
         }
     });
 
     // --- Admin-Logik ---
-
-    adminLoginBtn.addEventListener('click', () => {
-        mainApp.classList.add('hidden');
-        adminPanel.classList.remove('hidden');
-    });
-
-    backToMainBtn.addEventListener('click', () => {
-        adminPanel.classList.add('hidden');
-        mainApp.classList.remove('hidden');
-    });
-
     passwordSubmitBtn.addEventListener('click', async () => {
         const password = passwordInput.value;
-        // Einfache Prüfung, um unnötige Anfragen zu vermeiden
         if (!password) {
             loginErrorMsg.textContent = 'Bitte Passwort eingeben.';
             return;
         }
 
-        // Simuliere die Passwortprüfung auf dem Backend
-        // Hier fragen wir die Daten ab, wenn das Passwort korrekt ist
+        passwordSubmitBtn.disabled = true;
+        passwordSubmitBtn.textContent = 'Logge ein...';
+        loginErrorMsg.textContent = '';
+
         try {
-            const response = await fetch(GET_DATA_URL);
+            const response = await fetch(`${API_BASE_URL}/admin_login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: password })
+            });
+
+            const data = await response.json();
+
             if (response.ok) {
-                const data = await response.json();
                 currentTrainingData = data.data;
                 renderTrainingData();
                 loginForm.classList.add('hidden');
                 trainingDataView.classList.remove('hidden');
             } else {
-                loginErrorMsg.textContent = 'Falsches Passwort oder Fehler beim Laden der Daten.';
+                loginErrorMsg.textContent = data.error || 'Login fehlgeschlagen.';
             }
         } catch (error) {
             loginErrorMsg.textContent = 'Verbindungsfehler zur API.';
             console.error(error);
+        } finally {
+            passwordSubmitBtn.disabled = false;
+            passwordSubmitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
         }
     });
 
-    // Funktion zum Hinzufügen von Texten zur Liste
-    function addTextToList(label) {
+    // Funktion zum Hinzufügen von Texten
+    async function addTextToList(label) {
         const text = newTextInput.value.trim();
-        if (text) {
-            currentTrainingData.push({ text, label });
-            newTextInput.value = '';
-            renderTrainingData();
+        const password = passwordInput.value;
+        if (!text) {
+            saveStatusMsg.textContent = 'Bitte Text eingeben.';
+            saveStatusMsg.style.color = '#dc3545';
+            return;
+        }
+
+        saveStatusMsg.textContent = 'Füge hinzu...';
+        saveStatusMsg.style.color = '#007bff';
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/add_data`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text, label, password })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                currentTrainingData = [...currentTrainingData, { text, label }];
+                newTextInput.value = '';
+                renderTrainingData();
+                saveStatusMsg.textContent = '✅ Daten erfolgreich hinzugefügt und Modell neu trainiert!';
+                saveStatusMsg.style.color = '#28a745';
+            } else {
+                saveStatusMsg.textContent = `❌ Fehler: ${data.error}`;
+                saveStatusMsg.style.color = '#dc3545';
+            }
+        } catch (error) {
+            saveStatusMsg.textContent = '❌ Verbindungsproblem beim Hinzufügen.';
+            saveStatusMsg.style.color = '#dc3545';
         }
     }
 
     addHumanBtn.addEventListener('click', () => addTextToList('menschlich'));
     addKiBtn.addEventListener('click', () => addTextToList('ki'));
 
-    // Funktion zum Rendern der Trainingsdaten-Liste
-    function renderTrainingData() {
-        dataList.innerHTML = '';
-        currentTrainingData.forEach((item, index) => {
-            const li = document.createElement('li');
-            const labelSpan = document.createElement('span');
-            labelSpan.textContent = `[${item.label.toUpperCase()}]`;
-            labelSpan.classList.add('label', item.label === 'ki' ? 'ki-label' : 'human-label');
+    // Funktion zum Löschen eines Texts
+    async function deleteText(text, index) {
+        const password = passwordInput.value;
 
-            const textSpan = document.createElement('span');
-            textSpan.textContent = item.text.substring(0, 100) + '...'; // Kürze den Text
-
-            const deleteBtn = document.createElement('button');
-            deleteBtn.textContent = '🗑️';
-            deleteBtn.classList.add('delete-btn');
-            deleteBtn.addEventListener('click', () => {
-                currentTrainingData.splice(index, 1);
-                renderTrainingData();
-            });
-
-            li.appendChild(labelSpan);
-            li.appendChild(textSpan);
-            li.appendChild(deleteBtn);
-            dataList.appendChild(li);
-        });
-    }
-
-    // Funktion zum Speichern der Daten und erneutem Training des Modells
-    saveDataBtn.addEventListener('click', async () => {
-        saveDataBtn.disabled = true;
-        saveDataBtn.textContent = 'Speichere...';
-        saveStatusMsg.textContent = '';
+        saveStatusMsg.textContent = 'Lösche...';
+        saveStatusMsg.style.color = '#007bff';
 
         try {
-            const response = await fetch(SAVE_DATA_URL, {
+            const response = await fetch(`${API_BASE_URL}/delete_data`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    password: passwordInput.value,
-                    data: currentTrainingData
-                })
+                body: JSON.stringify({ text, password })
             });
 
             const data = await response.json();
 
             if (response.ok) {
-                saveStatusMsg.textContent = '✅ Daten gespeichert und Modell neu trainiert!';
+                currentTrainingData.splice(index, 1);
+                renderTrainingData();
+                saveStatusMsg.textContent = '✅ Daten erfolgreich gelöscht und Modell neu trainiert!';
                 saveStatusMsg.style.color = '#28a745';
-                console.log(data.message);
             } else {
                 saveStatusMsg.textContent = `❌ Fehler: ${data.error}`;
                 saveStatusMsg.style.color = '#dc3545';
-                console.error(data.error);
             }
         } catch (error) {
-            saveStatusMsg.textContent = '❌ Es gab ein Problem bei der Verbindung zum Server.';
+            saveStatusMsg.textContent = '❌ Verbindungsproblem beim Löschen.';
             saveStatusMsg.style.color = '#dc3545';
-            console.error('API-Anfrage fehlgeschlagen:', error);
-        } finally {
-            saveDataBtn.disabled = false;
-            saveDataBtn.textContent = 'Speichern und Modell neu trainieren';
         }
-    });
+    }
 
+    // Funktion zum Rendern der Trainingsdaten-Liste
+    function renderTrainingData() {
+        dataList.innerHTML = '';
+        let humanCount = 0;
+        let kiCount = 0;
+
+        currentTrainingData.forEach((item, index) => {
+            if (item.label === 'menschlich') humanCount++;
+            else kiCount++;
+
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <span class="data-text">${item.text}</span>
+                <span class="data-actions">
+                    <span class="label ${item.label === 'ki' ? 'ki-label' : 'human-label'}">
+                        ${item.label.toUpperCase()}
+                    </span>
+                    <button class="delete-btn" data-text="${item.text}"><i class="fas fa-trash-alt"></i></button>
+                </span>
+            `;
+            dataList.appendChild(li);
+
+            const deleteBtn = li.querySelector('.delete-btn');
+            deleteBtn.addEventListener('click', () => deleteText(item.text, index));
+        });
+
+        humanCountSpan.textContent = humanCount;
+        kiCountSpan.textContent = kiCount;
+    }
 });
