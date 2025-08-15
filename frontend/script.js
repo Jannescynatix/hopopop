@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const backToMainBtn = document.getElementById('back-to-main-btn');
 
     // **WICHTIG:** Ersetze DIESE URL durch die URL deiner gehosteten Render-App
-    const API_BASE_URL = 'https://deine-backend-url.onrender.com';
+    const API_BASE_URL = 'https://b-kb9u.onrender.com';
     const PREDICT_URL = `${API_BASE_URL}/predict`;
     const GET_DATA_URL = `${API_BASE_URL}/get_data`;
     const SAVE_DATA_URL = `${API_BASE_URL}/save_data`;
