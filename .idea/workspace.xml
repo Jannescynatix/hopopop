@@ -646,12 +646,7 @@
       <change afterPath="$PROJECT_DIR$/../untitled15/.idea/untitled15.iml" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/../untitled67/.idea/untitled67.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/data.json" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/backend/requirements.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/script.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/script.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/style.css" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/style.css" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -696,6 +691,7 @@
 }</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="\\wsl.localhost\Ubuntu\home\jannes\newdud\backend" />
       <recent name="\\wsl.localhost\Ubuntu\home\jannes\nahhhh\backend" />
     </key>
   </component>
@@ -751,7 +747,7 @@
       <updated>1755262667133</updated>
       <workItem from="1755262670790" duration="3137000" />
       <workItem from="1755268257639" duration="1154000" />
-      <workItem from="1755269775499" duration="2274000" />
+      <workItem from="1755269775499" duration="3303000" />
     </task>
     <servers />
   </component>
