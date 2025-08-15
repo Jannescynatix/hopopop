@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const menschLabel = document.getElementById('mensch-label');
 
     // **WICHTIG:** Ersetzen Sie DIESE URL durch die URL Ihrer gehosteten Render-App
-    const API_URL = 'https://ihre-ki-detektor-app.onrender.com/predict';
+    const API_URL = 'https://b-kb9u.onrender.com/predict';
 
     analyzeBtn.addEventListener('click', async () => {
         const text = textInput.value.trim();
