@@ -17,8 +17,9 @@ body {
     width: 90%;
     max-width: 600px;
     text-align: center;
+    margin: 20px auto; /* Zentriert und Abstand */
 }
-h1 {
+h1, h2 {
     color: #007BFF;
     margin-bottom: 10px;
 }
@@ -95,4 +96,111 @@ button:hover {
 }
 #ki-label {
     color: #dc3545;
+}
+
+/* Neue Stile für das Admin-Panel */
+#admin-login-btn {
+    background-color: #6c757d;
+}
+#admin-login-btn:hover {
+    background-color: #5a6268;
+}
+
+#admin-panel {
+    max-width: 800px;
+    text-align: left;
+}
+#admin-password-input {
+    width: calc(100% - 22px);
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+#login-form button {
+    margin-top: 0;
+}
+.error-msg {
+    color: #dc3545;
+    font-weight: bold;
+    margin-top: 10px;
+}
+.add-data-section {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+}
+.add-data-section textarea {
+    min-height: 100px;
+}
+.add-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+.add-buttons button {
+    width: 48%;
+    padding: 10px 15px;
+    font-size: 16px;
+    margin: 0;
+}
+#add-human-btn {
+    background-color: #28a745;
+}
+#add-human-btn:hover {
+    background-color: #218838;
+}
+#add-ki-btn {
+    background-color: #dc3545;
+}
+#add-ki-btn:hover {
+    background-color: #c82333;
+}
+#data-list {
+    list-style: none;
+    padding: 0;
+    margin-top: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+}
+#data-list li {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+#data-list li:last-child {
+    border-bottom: none;
+}
+#data-list .label {
+    font-weight: bold;
+    margin-right: 10px;
+}
+#data-list .ki-label {
+    color: #dc3545;
+}
+#data-list .human-label {
+    color: #28a745;
+}
+#data-list .delete-btn {
+    background: none;
+    border: none;
+    color: #dc3545;
+    cursor: pointer;
+    font-size: 20px;
+    padding: 5px;
+    margin: 0;
+    transition: color 0.2s;
+}
+#data-list .delete-btn:hover {
+    color: #a71d2a;
+}
+#save-data-btn {
+    background-color: #007BFF;
+}
+#back-to-main-btn {
+    background-color: #6c757d;
 }
