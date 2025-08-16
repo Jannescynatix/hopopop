@@ -28,8 +28,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveStatusMsg = document.getElementById('save-status-msg');
     const humanCountSpan = document.getElementById('human-count');
     const kiCountSpan = document.getElementById('ki-count');
+    const untrainiertCountSpan = document.getElementById('untrainiert-count');
+    const retrainBtn = document.getElementById('retrain-btn');
+    const retrainStatusMsg = document.getElementById('retrain-status-msg');
 
-    // **WICHTIG:** Ersetzen Sie DIESE URL durch die URL Ihrer gehosteten Render-App
+    // WICHTIG: Ersetzen Sie DIESE URL durch die URL Ihrer gehosteten Render-App
     const API_BASE_URL = 'https://b-kb9u.onrender.com';
     let currentTrainingData = [];
 
@@ -39,15 +42,16 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const targetId = e.target.dataset.target;
 
-            // Verstecke alle Seiten
             pages.forEach(page => page.classList.remove('active'));
-            // Zeige die Zielseite
             document.getElementById(targetId).classList.add('active');
 
-            // Deaktiviere alle Nav-Links
             navLinks.forEach(navLink => navLink.classList.remove('active'));
-            // Aktiviere den geklickten Link
             link.classList.add('active');
+
+            // Bei Wechsel zum Admin-Panel, Datenstatus aktualisieren
+            if (targetId === 'admin-panel' && !loginForm.classList.contains('hidden')) {
+                updateTrainingDataStatus();
+            }
         });
     });
 
@@ -150,6 +154,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         saveStatusMsg.textContent = 'Füge hinzu...';
         saveStatusMsg.style.color = '#007bff';
+        addHumanBtn.disabled = true;
+        addKiBtn.disabled = true;
 
         try {
             const response = await fetch(`${API_BASE_URL}/add_data`, {
@@ -161,10 +167,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             if (response.ok) {
-                currentTrainingData = [...currentTrainingData, { text, label }];
+                // Füge das neue Element zur lokalen Liste hinzu, markiert als 'untrained'
+                currentTrainingData.push({ text, label, trained: false });
                 newTextInput.value = '';
                 renderTrainingData();
-                saveStatusMsg.textContent = '✅ Daten erfolgreich hinzugefügt und Modell neu trainiert!';
+                saveStatusMsg.textContent = '✅ Daten erfolgreich zur Warteschlange hinzugefügt! Modell neu trainieren, um sie zu verwenden.';
                 saveStatusMsg.style.color = '#28a745';
             } else {
                 saveStatusMsg.textContent = `❌ Fehler: ${data.error}`;
@@ -173,6 +180,9 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             saveStatusMsg.textContent = '❌ Verbindungsproblem beim Hinzufügen.';
             saveStatusMsg.style.color = '#dc3545';
+        } finally {
+            addHumanBtn.disabled = false;
+            addKiBtn.disabled = false;
         }
     }
 
@@ -198,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 currentTrainingData.splice(index, 1);
                 renderTrainingData();
-                saveStatusMsg.textContent = '✅ Daten erfolgreich gelöscht und Modell neu trainiert!';
+                saveStatusMsg.textContent = '✅ Daten erfolgreich gelöscht!';
                 saveStatusMsg.style.color = '#28a745';
             } else {
                 saveStatusMsg.textContent = `❌ Fehler: ${data.error}`;
@@ -215,14 +225,17 @@ document.addEventListener('DOMContentLoaded', () => {
         dataList.innerHTML = '';
         let humanCount = 0;
         let kiCount = 0;
+        let untrainedCount = 0;
 
         currentTrainingData.forEach((item, index) => {
             if (item.label === 'menschlich') humanCount++;
             else kiCount++;
 
+            if (!item.trained) untrainedCount++;
+
             const li = document.createElement('li');
             li.innerHTML = `
-                <span class="data-text">${item.text}</span>
+                <span class="data-text ${item.trained ? '' : 'untrained-text'}">${item.text}</span>
                 <span class="data-actions">
                     <span class="label ${item.label === 'ki' ? 'ki-label' : 'human-label'}">
                         ${item.label.toUpperCase()}
@@ -238,5 +251,55 @@ document.addEventListener('DOMContentLoaded', () => {
 
         humanCountSpan.textContent = humanCount;
         kiCountSpan.textContent = kiCount;
+        untrainiertCountSpan.textContent = untrainedCount;
+    }
+
+    // Funktion zum Neu-Trainieren des Modells
+    retrainBtn.addEventListener('click', async () => {
+        const password = passwordInput.value;
+        retrainStatusMsg.textContent = 'Modell wird neu trainiert...';
+        retrainStatusMsg.style.color = '#007bff';
+        retrainBtn.disabled = true;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/retrain_model`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: password })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                retrainStatusMsg.textContent = '✅ Modell-Training gestartet. Dies kann einen Moment dauern.';
+                retrainStatusMsg.style.color = '#28a745';
+                // Aktualisiere den Datenstatus, um die 'trained' Flagge zu sehen
+                setTimeout(updateTrainingDataStatus, 3000); // 3 Sekunden warten
+            } else {
+                retrainStatusMsg.textContent = `❌ Fehler: ${data.error}`;
+                retrainStatusMsg.style.color = '#dc3545';
+            }
+        } catch (error) {
+            retrainStatusMsg.textContent = '❌ Verbindungsproblem beim Training.';
+            retrainStatusMsg.style.color = '#dc3545';
+        } finally {
+            retrainBtn.disabled = false;
+        }
+    });
+
+    async function updateTrainingDataStatus() {
+        const password = passwordInput.value;
+        try {
+            const response = await fetch(`${API_BASE_URL}/get_data_status?password=${password}`);
+            const data = await response.json();
+            if (response.ok) {
+                currentTrainingData = data.data;
+                renderTrainingData();
+            } else {
+                console.error("Fehler beim Abrufen der Daten:", data.error);
+            }
+        } catch (error) {
+            console.error("Fehler beim Abrufen der Daten:", error);
+        }
     }
 });

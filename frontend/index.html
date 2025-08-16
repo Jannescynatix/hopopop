@@ -62,6 +62,11 @@
                     <span id="ki-count">0</span>
                     <p>KI-Texte</p>
                 </div>
+                <div class="stat-box untrained-stat">
+                    <i class="fas fa-hourglass-half"></i>
+                    <span id="untrainiert-count">0</span>
+                    <p>Warteschlange</p>
+                </div>
             </div>
 
             <div class="add-data-section">
@@ -70,10 +75,17 @@
                     <button id="add-human-btn"><i class="fas fa-user-plus"></i> Als Menschlich hinzufügen</button>
                     <button id="add-ki-btn"><i class="fas fa-robot"></i> Als KI hinzufügen</button>
                 </div>
+                <p id="save-status-msg" class="status-msg"></p>
+            </div>
+
+            <div class="training-control-section">
+                <h3>Modell-Training</h3>
+                <p>Klicken Sie hier, um das Modell mit allen neuen Daten neu zu trainieren. Dies kann bei großen Datenmengen einige Minuten dauern.</p>
+                <button id="retrain-btn"><i class="fas fa-sync-alt"></i> Modell neu trainieren</button>
+                <p id="retrain-status-msg" class="status-msg"></p>
             </div>
 
             <ul id="data-list"></ul>
-            <p id="save-status-msg" class="status-msg"></p>
         </div>
     </div>
 </section>
