@@ -22,22 +22,21 @@ CORS(app)
 # --- NLTK-Daten herunterladen und überprüfen ---
 def download_nltk_data():
     """Lädt die NLTK-Daten herunter, falls sie nicht vorhanden sind."""
-    try:
-        nltk.data.find('tokenizers/punkt')
-        print("[LOG] NLTK-Daten 'punkt' bereits vorhanden.")
-    except LookupError:
-        print("[LOG] NLTK-Daten 'punkt' nicht gefunden. Starte Download...")
+    required_resources = ['punkt', 'punkt_tab'] # Fügt punkt_tab hinzu
+    for resource in required_resources:
         try:
-            # Versuche, in den globalen NLTK-Datenpfad herunterzuladen
-            nltk.download('punkt', quiet=True)
-            print("[LOG] NLTK-Daten erfolgreich heruntergeladen.")
-        except Exception:
-            # Fallback: Versuche, in das Projektverzeichnis herunterzuladen
-            print("[LOG] Globaler NLTK-Download fehlgeschlagen. Versuche, in das Projektverzeichnis herunterzuladen.")
-            nltk.download('punkt', quiet=True, download_dir='.')
-            print("[LOG] NLTK-Daten in das Projektverzeichnis heruntergeladen.")
-            # Setze den NLTK_DATA-Pfad, damit der Vektorizer die Daten findet
-            os.environ['NLTK_DATA'] = os.getcwd()
+            nltk.data.find(f'tokenizers/{resource}')
+            print(f"[LOG] NLTK-Daten '{resource}' bereits vorhanden.")
+        except LookupError:
+            print(f"[LOG] NLTK-Daten '{resource}' nicht gefunden. Starte Download...")
+            try:
+                nltk.download(resource, quiet=True)
+                print(f"[LOG] NLTK-Daten '{resource}' erfolgreich heruntergeladen.")
+            except Exception:
+                print(f"[LOG] Globaler NLTK-Download für '{resource}' fehlgeschlagen. Versuche, in das Projektverzeichnis herunterzuladen.")
+                nltk.download(resource, quiet=True, download_dir='.')
+                print(f"[LOG] NLTK-Daten '{resource}' in das Projektverzeichnis heruntergeladen.")
+                os.environ['NLTK_DATA'] = os.getcwd()
 
 download_nltk_data()
 
