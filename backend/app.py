@@ -13,17 +13,33 @@ from sklearn.compose import ColumnTransformer
 import numpy as np
 import nltk
 from nltk.tokenize import sent_tokenize
+import os
 
 # Flask-App initialisieren
 app = Flask(__name__)
 CORS(app)
 
-# Stelle sicher, dass NLTK-Daten heruntergeladen sind (einmalig)
-try:
-    nltk.data.find('tokenizers/punkt')
-except nltk.downloader.DownloadError:
-    nltk.download('punkt', quiet=True)
+# --- NLTK-Daten herunterladen und überprüfen ---
+def download_nltk_data():
+    """Lädt die NLTK-Daten herunter, falls sie nicht vorhanden sind."""
+    try:
+        nltk.data.find('tokenizers/punkt')
+        print("[LOG] NLTK-Daten 'punkt' bereits vorhanden.")
+    except LookupError:
+        print("[LOG] NLTK-Daten 'punkt' nicht gefunden. Starte Download...")
+        try:
+            # Versuche, in den globalen NLTK-Datenpfad herunterzuladen
+            nltk.download('punkt', quiet=True)
+            print("[LOG] NLTK-Daten erfolgreich heruntergeladen.")
+        except Exception:
+            # Fallback: Versuche, in das Projektverzeichnis herunterzuladen
+            print("[LOG] Globaler NLTK-Download fehlgeschlagen. Versuche, in das Projektverzeichnis herunterzuladen.")
+            nltk.download('punkt', quiet=True, download_dir='.')
+            print("[LOG] NLTK-Daten in das Projektverzeichnis heruntergeladen.")
+            # Setze den NLTK_DATA-Pfad, damit der Vektorizer die Daten findet
+            os.environ['NLTK_DATA'] = os.getcwd()
 
+download_nltk_data()
 
 # Passwort für das Admin-Panel
 ADMIN_PASSWORD = 'mozji7' # ⚠️ ÄNDERE DIESES PASSWORT!
@@ -47,7 +63,6 @@ class TextFeaturesExtractor(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X, y=None):
-        # Konvertiere X in eine Pandas Series, falls es ein DataFrame ist
         if isinstance(X, pd.DataFrame):
             X = X['text']
 
@@ -56,14 +71,13 @@ class TextFeaturesExtractor(BaseEstimator, TransformerMixin):
         avg_word_length = X.apply(lambda text: sum(len(word) for word in text.split()) / len(text.split()) if len(text.split()) > 0 else 0)
 
         # NEUES FEATURE: Burstiness (Standardabweichung der Satzlänge)
-        # Teilt den Text in Sätze, zählt die Wörter in jedem Satz und berechnet dann die Standardabweichung.
         burstiness = X.apply(lambda text: np.std([len(sentence.split()) for sentence in sent_tokenize(text)]) if len(sent_tokenize(text)) > 1 else 0)
 
         return pd.DataFrame({
             'num_sentences': num_sentences,
             'num_words': num_words,
             'avg_word_length': avg_word_length,
-            'burstiness': burstiness  # Das neue Merkmal
+            'burstiness': burstiness
         })
 
 # --- Daten- und Modell-Logik ---
@@ -152,8 +166,6 @@ def train_and_save_model():
 
     except Exception as e:
         print(f"[FEHLER] Fehler beim Neu-Trainieren des Modells: {str(e)}")
-        # Optional: Sende eine E-Mail oder eine andere Benachrichtigung an den Administrator
-        # return jsonify({'error': f'Ein interner Fehler ist aufgetreten: {str(e)}'}), 500
 
 # Beim Start des Servers initial trainieren
 seed_database()
