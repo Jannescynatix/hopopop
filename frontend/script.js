@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Navigations-Elemente
     const navLinks = document.querySelectorAll('.nav-link');
     const pages = document.querySelectorAll('.page-section');
+    const body = document.body;
 
     // App-Elemente
     const analyzeBtn = document.getElementById('analyze-btn');
@@ -25,16 +26,39 @@ document.addEventListener('DOMContentLoaded', () => {
     const addHumanBtn = document.getElementById('add-human-btn');
     const addKiBtn = document.getElementById('add-ki-btn');
     const dataList = document.getElementById('data-list');
-    const saveStatusMsg = document.getElementById('save-status-msg');
     const humanCountSpan = document.getElementById('human-count');
     const kiCountSpan = document.getElementById('ki-count');
     const untrainiertCountSpan = document.getElementById('untrainiert-count');
     const retrainBtn = document.getElementById('retrain-btn');
-    const retrainStatusMsg = document.getElementById('retrain-status-msg');
 
     // WICHTIG: Ersetzen Sie DIESE URL durch die URL Ihrer gehosteten Render-App
     const API_BASE_URL = 'https://b-kb9u.onrender.com';
     let currentTrainingData = [];
+
+    // --- Allgemeine Hilfsfunktion für Toast-Nachrichten ---
+    function showToast(message, type = 'info', duration = 3000) {
+        // Entferne alte Toasts, falls vorhanden
+        const existingToast = document.querySelector('.toast-message');
+        if (existingToast) existingToast.remove();
+
+        const toast = document.createElement('div');
+        toast.className = `toast-message toast-${type}`;
+        toast.textContent = message;
+        body.appendChild(toast);
+
+        // Zeige den Toast an
+        setTimeout(() => {
+            toast.classList.add('show');
+        }, 10);
+
+        // Verstecke und entferne den Toast nach der Dauer
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => {
+                toast.remove();
+            }, 300); // Warte auf Fade-out
+        }, duration);
+    }
 
     // --- Navigations-Logik ---
     navLinks.forEach(link => {
@@ -48,7 +72,6 @@ document.addEventListener('DOMContentLoaded', () => {
             navLinks.forEach(navLink => navLink.classList.remove('active'));
             link.classList.add('active');
 
-            // Bei Wechsel zum Admin-Panel, Datenstatus aktualisieren
             if (targetId === 'admin-panel' && !loginForm.classList.contains('hidden')) {
                 updateTrainingDataStatus();
             }
@@ -60,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const text = textInput.value.trim();
 
         if (text.length === 0) {
-            alert('Bitte geben Sie einen Text ein, um die Analyse zu starten.');
+            showToast('Bitte Text eingeben.', 'error');
             return;
         }
 
@@ -69,6 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
         analyzeBtn.textContent = 'Analysiere...';
 
         try {
+            showToast('Text wird analysiert...', 'info', 2000);
             const response = await fetch(`${API_BASE_URL}/predict`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -80,23 +104,27 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 const kiProb = data.ki;
                 const menschProb = data.menschlich;
-
                 resultContainer.classList.remove('hidden');
+
                 if (kiProb > menschProb) {
                     resultText.textContent = `Dieser Text wurde wahrscheinlich von einer KI generiert.`;
+                    showToast('Die Analyse ist abgeschlossen.', 'warning');
                 } else {
                     resultText.textContent = `Dieser Text wurde wahrscheinlich von einem Menschen geschrieben.`;
+                    showToast('Die Analyse ist abgeschlossen.', 'success');
                 }
+
                 kiBar.style.width = `${kiProb}%`;
                 menschBar.style.width = `${menschProb}%`;
                 kiLabel.textContent = `KI: ${kiProb}%`;
                 menschLabel.textContent = `Menschlich: ${menschProb}%`;
             } else {
+                showToast(`Fehler bei der Analyse: ${data.error}`, 'error');
                 resultText.textContent = `Fehler: ${data.error}`;
             }
-
         } catch (error) {
             console.error('Fehler bei der API-Anfrage:', error);
+            showToast('Verbindungsproblem zur API.', 'error');
             resultText.textContent = 'Es gab ein Problem bei der Verbindung zur API.';
         } finally {
             analyzeBtn.disabled = false;
@@ -108,6 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
     passwordSubmitBtn.addEventListener('click', async () => {
         const password = passwordInput.value;
         if (!password) {
+            showToast('Bitte Passwort eingeben.', 'error');
             loginErrorMsg.textContent = 'Bitte Passwort eingeben.';
             return;
         }
@@ -130,12 +159,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderTrainingData();
                 loginForm.classList.add('hidden');
                 trainingDataView.classList.remove('hidden');
+                showToast('Login erfolgreich!', 'success');
             } else {
                 loginErrorMsg.textContent = data.error || 'Login fehlgeschlagen.';
+                showToast(`Login fehlgeschlagen: ${data.error}`, 'error');
             }
         } catch (error) {
             loginErrorMsg.textContent = 'Verbindungsfehler zur API.';
             console.error(error);
+            showToast('Verbindungsproblem zur API.', 'error');
         } finally {
             passwordSubmitBtn.disabled = false;
             passwordSubmitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
@@ -147,13 +179,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const text = newTextInput.value.trim();
         const password = passwordInput.value;
         if (!text) {
-            saveStatusMsg.textContent = 'Bitte Text eingeben.';
-            saveStatusMsg.style.color = '#dc3545';
+            showToast('Bitte Text eingeben.', 'error');
             return;
         }
 
-        saveStatusMsg.textContent = 'Füge hinzu...';
-        saveStatusMsg.style.color = '#007bff';
+        showToast('Füge Daten hinzu...', 'info');
         addHumanBtn.disabled = true;
         addKiBtn.disabled = true;
 
@@ -167,19 +197,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             if (response.ok) {
-                // Füge das neue Element zur lokalen Liste hinzu, markiert als 'untrained'
                 currentTrainingData.push({ text, label, trained: false });
                 newTextInput.value = '';
                 renderTrainingData();
-                saveStatusMsg.textContent = '✅ Daten erfolgreich zur Warteschlange hinzugefügt! Modell neu trainieren, um sie zu verwenden.';
-                saveStatusMsg.style.color = '#28a745';
+                showToast('✅ Daten erfolgreich zur Warteschlange hinzugefügt!', 'success');
             } else {
-                saveStatusMsg.textContent = `❌ Fehler: ${data.error}`;
-                saveStatusMsg.style.color = '#dc3545';
+                showToast(`❌ Fehler: ${data.error}`, 'error');
             }
         } catch (error) {
-            saveStatusMsg.textContent = '❌ Verbindungsproblem beim Hinzufügen.';
-            saveStatusMsg.style.color = '#dc3545';
+            showToast('❌ Verbindungsproblem beim Hinzufügen.', 'error');
         } finally {
             addHumanBtn.disabled = false;
             addKiBtn.disabled = false;
@@ -192,9 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Funktion zum Löschen eines Texts
     async function deleteText(text, index) {
         const password = passwordInput.value;
-
-        saveStatusMsg.textContent = 'Lösche...';
-        saveStatusMsg.style.color = '#007bff';
+        showToast('Lösche Daten...', 'info');
 
         try {
             const response = await fetch(`${API_BASE_URL}/delete_data`, {
@@ -208,15 +232,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 currentTrainingData.splice(index, 1);
                 renderTrainingData();
-                saveStatusMsg.textContent = '✅ Daten erfolgreich gelöscht!';
-                saveStatusMsg.style.color = '#28a745';
+                showToast('✅ Daten erfolgreich gelöscht!', 'success');
             } else {
-                saveStatusMsg.textContent = `❌ Fehler: ${data.error}`;
-                saveStatusMsg.style.color = '#dc3545';
+                showToast(`❌ Fehler: ${data.error}`, 'error');
             }
         } catch (error) {
-            saveStatusMsg.textContent = '❌ Verbindungsproblem beim Löschen.';
-            saveStatusMsg.style.color = '#dc3545';
+            showToast('❌ Verbindungsproblem beim Löschen.', 'error');
         }
     }
 
@@ -230,7 +251,6 @@ document.addEventListener('DOMContentLoaded', () => {
         currentTrainingData.forEach((item, index) => {
             if (item.label === 'menschlich') humanCount++;
             else kiCount++;
-
             if (!item.trained) untrainedCount++;
 
             const li = document.createElement('li');
@@ -257,8 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Funktion zum Neu-Trainieren des Modells
     retrainBtn.addEventListener('click', async () => {
         const password = passwordInput.value;
-        retrainStatusMsg.textContent = 'Modell wird neu trainiert...';
-        retrainStatusMsg.style.color = '#007bff';
+        showToast('Modell-Training gestartet...', 'info');
         retrainBtn.disabled = true;
 
         try {
@@ -271,17 +290,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             if (response.ok) {
-                retrainStatusMsg.textContent = '✅ Modell-Training gestartet. Dies kann einen Moment dauern.';
-                retrainStatusMsg.style.color = '#28a745';
-                // Aktualisiere den Datenstatus, um die 'trained' Flagge zu sehen
-                setTimeout(updateTrainingDataStatus, 3000); // 3 Sekunden warten
+                showToast('✅ Modell-Training gestartet. Schau in die Logs für Details!', 'success', 5000);
+                setTimeout(updateTrainingDataStatus, 3000); // Warte 3s, bis DB-Update
             } else {
-                retrainStatusMsg.textContent = `❌ Fehler: ${data.error}`;
-                retrainStatusMsg.style.color = '#dc3545';
+                showToast(`❌ Fehler: ${data.error}`, 'error');
             }
         } catch (error) {
-            retrainStatusMsg.textContent = '❌ Verbindungsproblem beim Training.';
-            retrainStatusMsg.style.color = '#dc3545';
+            showToast('❌ Verbindungsproblem beim Training.', 'error');
         } finally {
             retrainBtn.disabled = false;
         }
@@ -297,9 +312,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderTrainingData();
             } else {
                 console.error("Fehler beim Abrufen der Daten:", data.error);
+                showToast(`Fehler beim Aktualisieren des Datenstatus: ${data.error}`, 'error');
             }
         } catch (error) {
             console.error("Fehler beim Abrufen der Daten:", error);
+            showToast('Verbindungsproblem beim Abrufen des Datenstatus.', 'error');
         }
     }
 });

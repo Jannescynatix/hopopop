@@ -20,7 +20,6 @@ ADMIN_PASSWORD = 'mozji7' # ⚠️ ÄNDERE DIESES PASSWORT!
 
 # Globale Variablen für das Modell und den Vektorizer
 model = None
-vectorizer = None
 
 # MongoDB-Verbindung
 MONGO_URI = 'mongodb+srv://wwll:k2AOWvBKW5H5oeZO@py.9gqajwk.mongodb.net/?retryWrites=true&w=majority&appName=py' # ⚠️ HIER URL EINFÜGEN!
@@ -38,12 +37,10 @@ class TextFeaturesExtractor(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X, y=None):
-        # X ist ein pandas Series-Objekt mit den Texten
         num_sentences = X.apply(lambda text: len(re.split('[.!?]', text)))
         num_words = X.apply(lambda text: len(text.split()))
         avg_word_length = X.apply(lambda text: sum(len(word) for word in text.split()) / len(text.split()) if len(text.split()) > 0 else 0)
 
-        # DataFrame mit den extrahierten Features erstellen
         return pd.DataFrame({
             'num_sentences': num_sentences,
             'num_words': num_words,
@@ -54,8 +51,9 @@ class TextFeaturesExtractor(BaseEstimator, TransformerMixin):
 
 def seed_database():
     """Befüllt die Datenbank nur, wenn sie leer ist."""
+    print("[LOG] Überprüfe Datenbank...")
     if training_data_collection.count_documents({}) == 0:
-        print("Datenbank ist leer. Befülle sie mit Initialdaten...")
+        print("[LOG] Datenbank ist leer. Befülle sie mit Initialdaten...")
         initial_human_texts = [
             'Als ich gestern Abend durch den Wald spazierte, hörte ich plötzlich ein lautes Knacken hinter mir. Ich drehte mich um, sah aber nichts. Trotzdem beschleunigte ich meine Schritte, denn die Geräusche folgten mir.',
             'Meine Großmutter hat mir ein altes Familienrezept für Apfelkuchen gegeben. Es ist handgeschrieben auf einem zerknitterten Zettel, der Flecken von Zucker und Mehl hat.',
@@ -88,52 +86,55 @@ def seed_database():
             {'text': text, 'label': 'ki', 'trained': True} for text in initial_ki_texts
         ])
         training_data_collection.insert_many(data_to_insert)
-        print("Datenbank erfolgreich befüllt.")
+        print("[LOG] Datenbank erfolgreich befüllt.")
+    else:
+        print("[LOG] Datenbank enthält bereits Daten. Überspringe Befüllung.")
 
 def train_and_save_model():
     """Lädt die Daten aus der DB und trainiert das Modell neu."""
-    global model, vectorizer
+    global model
+    print("[LOG] Starte Modell-Training...")
 
-    # Lade nur die als 'trained' markierten Daten
-    training_data_list = list(training_data_collection.find({'trained': True}, {'_id': 0}))
+    try:
+        training_data_list = list(training_data_collection.find({'trained': True}, {'_id': 0}))
 
-    if not training_data_list:
-        print("Keine trainierbaren Daten in der Datenbank gefunden.")
-        model = None
-        vectorizer = None
-        return
+        if not training_data_list:
+            print("[LOG] Keine trainierbaren Daten in der Datenbank gefunden.")
+            model = None
+            return
 
-    df = pd.DataFrame(training_data_list)
+        df = pd.DataFrame(training_data_list)
+        print(f"[LOG] {len(df)} Datensätze für das Training geladen.")
 
-    # Erstelle die Feature-Pipeline
-    preprocessor = ColumnTransformer(
-        transformers=[
-            ('text_tfidf', TfidfVectorizer(ngram_range=(1, 3), max_features=1000), 'text'),
-            ('text_features', TextFeaturesExtractor(), 'text')
-        ],
-        remainder='passthrough'
-    )
+        preprocessor = ColumnTransformer(
+            transformers=[
+                ('text_tfidf', TfidfVectorizer(ngram_range=(1, 3), max_features=1000), 'text'),
+                ('text_features', TextFeaturesExtractor(), 'text')
+            ],
+            remainder='passthrough'
+        )
 
-    # Erstelle die vollständige Modell-Pipeline
-    model = Pipeline(steps=[
-        ('preprocessor', preprocessor),
-        ('classifier', MultinomialNB())
-    ])
+        model = Pipeline(steps=[
+            ('preprocessor', preprocessor),
+            ('classifier', MultinomialNB())
+        ])
 
-    # Trenne Features (X) und Labels (y)
-    X = df[['text']]  # DataFrame mit nur einer 'text'-Spalte
-    y = df['label']
+        X = df[['text']]
+        y = df['label']
 
-    # Modell trainieren
-    model.fit(X, y)
+        model.fit(X, y)
 
-    # Speichern der gesamten Pipeline
-    joblib.dump(model, 'model_pipeline.pkl')
-    print("Modell-Pipeline wurde erfolgreich neu trainiert und gespeichert.")
+        joblib.dump(model, 'model_pipeline.pkl')
+        print("[LOG] Modell-Pipeline wurde erfolgreich neu trainiert und gespeichert.")
 
-    # Markiere alle Daten in der Datenbank als 'trained'
-    training_data_collection.update_many({'trained': False}, {'$set': {'trained': True}})
-    print("Alle neuen Daten als 'trained' markiert.")
+        training_data_collection.update_many({'trained': False}, {'$set': {'trained': True}})
+        print("[LOG] Alle neuen Daten als 'trained' markiert.")
+        print("[STATUS] TRAINING ABGESCHLOSSEN.")
+
+    except Exception as e:
+        print(f"[FEHLER] Fehler beim Neu-Trainieren des Modells: {str(e)}")
+        # Optional: Sende eine E-Mail oder eine andere Benachrichtigung an den Administrator
+        # return jsonify({'error': f'Ein interner Fehler ist aufgetreten: {str(e)}'}), 500
 
 # Beim Start des Servers initial trainieren
 seed_database()
@@ -151,21 +152,27 @@ def predict():
         return jsonify({'error': 'Kein Text bereitgestellt.'}), 400
 
     if model is None:
+        print("[FEHLER] Vorhersage fehlgeschlagen: Modell ist nicht geladen oder trainiert.")
         return jsonify({'error': 'Das Modell ist noch nicht geladen oder trainiert.'}), 500
 
-    # Da unser Modell nun eine Pipeline ist, übergeben wir den Text direkt
-    # in einem DataFrame, da der ColumnTransformer dies erwartet
-    text_df = pd.DataFrame([{'text': text}])
-    probabilities = model.predict_proba(text_df)[0]
-    classes = model.classes_
+    try:
+        text_df = pd.DataFrame([{'text': text}])
+        probabilities = model.predict_proba(text_df)[0]
+        classes = model.classes_
 
-    mensch_prob = float(probabilities[classes == 'menschlich'])
-    ki_prob = float(probabilities[classes == 'ki'])
+        mensch_prob = float(probabilities[classes == 'menschlich'])
+        ki_prob = float(probabilities[classes == 'ki'])
 
-    return jsonify({
-        'menschlich': round(mensch_prob * 100, 2),
-        'ki': round(ki_prob * 100, 2)
-    })
+        print(f"[LOG] Vorhersage für Text: '{text[:30]}...'. Ergebnis: Menschlich: {round(mensch_prob * 100, 2)}%, KI: {round(ki_prob * 100, 2)}%")
+
+        return jsonify({
+            'menschlich': round(mensch_prob * 100, 2),
+            'ki': round(ki_prob * 100, 2)
+        })
+    except Exception as e:
+        print(f"[FEHLER] Vorhersage konnte nicht durchgeführt werden: {str(e)}")
+        return jsonify({'error': 'Ein Fehler bei der Vorhersage ist aufgetreten.'}), 500
+
 
 @app.route('/admin_login', methods=['POST'])
 def admin_login():
@@ -173,9 +180,11 @@ def admin_login():
     password = data.get('password')
 
     if password == ADMIN_PASSWORD:
+        print("[LOG] Admin-Login erfolgreich.")
         training_data_list = list(training_data_collection.find({}, {'_id': 0}))
         return jsonify({'message': 'Login erfolgreich', 'data': training_data_list})
     else:
+        print("[FEHLER] Admin-Login fehlgeschlagen: Falsches Passwort.")
         return jsonify({'error': 'Falsches Passwort.'}), 401
 
 @app.route('/add_data', methods=['POST'])
@@ -186,13 +195,15 @@ def add_data():
     password = data.get('password')
 
     if password != ADMIN_PASSWORD:
+        print("[FEHLER] Daten hinzufügen fehlgeschlagen: Falsches Passwort.")
         return jsonify({'error': 'Falsches Passwort.'}), 401
 
     if not text or not label:
+        print("[FEHLER] Daten hinzufügen fehlgeschlagen: Text und Label fehlen.")
         return jsonify({'error': 'Text und Label sind erforderlich.'}), 400
 
-    # Neue Daten als 'untrained' markieren
     training_data_collection.insert_one({'text': text, 'label': label, 'trained': False})
+    print(f"[LOG] Neuer Datensatz ({label}) zur Warteschlange hinzugefügt: '{text[:30]}...'")
 
     return jsonify({'message': 'Daten erfolgreich zur Trainingswarteschlange hinzugefügt!'})
 
@@ -203,15 +214,19 @@ def delete_data():
     password = data.get('password')
 
     if password != ADMIN_PASSWORD:
+        print("[FEHLER] Daten löschen fehlgeschlagen: Falsches Passwort.")
         return jsonify({'error': 'Falsches Passwort.'}), 401
 
     if not text_to_delete:
+        print("[FEHLER] Daten löschen fehlgeschlagen: Text zum Löschen fehlt.")
         return jsonify({'error': 'Text zum Löschen ist erforderlich.'}), 400
 
     result = training_data_collection.delete_one({'text': text_to_delete})
     if result.deleted_count > 0:
+        print(f"[LOG] Datensatz erfolgreich gelöscht: '{text_to_delete[:30]}...'")
         return jsonify({'message': 'Daten erfolgreich gelöscht.'})
     else:
+        print("[FEHLER] Daten löschen fehlgeschlagen: Text nicht in der DB gefunden.")
         return jsonify({'error': 'Text nicht gefunden.'}), 404
 
 # NEUER ENDPUNKT: Modell neu trainieren
@@ -221,13 +236,15 @@ def retrain_model():
     password = data.get('password')
 
     if password != ADMIN_PASSWORD:
+        print("[FEHLER] Retraining fehlgeschlagen: Falsches Passwort.")
         return jsonify({'error': 'Falsches Passwort.'}), 401
 
     try:
         train_and_save_model()
         return jsonify({'message': 'Modell wird im Hintergrund neu trainiert.'})
     except Exception as e:
-        return jsonify({'error': f'Fehler beim Neu-Trainieren: {str(e)}'}), 500
+        print(f"[FEHLER] Fehler bei der API-Anfrage zum Neu-Trainieren: {str(e)}")
+        return jsonify({'error': f'Ein Fehler beim Neu-Trainieren ist aufgetreten: {str(e)}'}), 500
 
 @app.route('/get_data_status', methods=['GET'])
 def get_data_status():
@@ -237,8 +254,10 @@ def get_data_status():
 
     try:
         total_data = list(training_data_collection.find({}, {'_id': 0, 'text': 1, 'label': 1, 'trained': 1}))
+        print("[LOG] Datenstatus erfolgreich abgerufen.")
         return jsonify({'data': total_data})
     except Exception as e:
+        print(f"[FEHLER] Fehler beim Abrufen des Datenstatus: {str(e)}")
         return jsonify({'error': f'Fehler beim Abrufen der Daten: {str(e)}'}), 500
 
 if __name__ == '__main__':
