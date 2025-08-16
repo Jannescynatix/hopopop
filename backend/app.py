@@ -14,6 +14,8 @@ import numpy as np
 import nltk
 from nltk.tokenize import sent_tokenize
 import os
+import bcrypt
+from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadTimeSignature
 
 # Flask-App initialisieren
 app = Flask(__name__)
@@ -22,7 +24,7 @@ CORS(app)
 # --- NLTK-Daten herunterladen und überprüfen ---
 def download_nltk_data():
     """Lädt die NLTK-Daten herunter, falls sie nicht vorhanden sind."""
-    required_resources = ['punkt', 'punkt_tab'] # Fügt punkt_tab hinzu
+    required_resources = ['punkt', 'punkt_tab']
     for resource in required_resources:
         try:
             nltk.data.find(f'tokenizers/{resource}')
@@ -36,28 +38,35 @@ def download_nltk_data():
                 print(f"[LOG] Globaler NLTK-Download für '{resource}' fehlgeschlagen. Versuche, in das Projektverzeichnis herunterzuladen.")
                 nltk.download(resource, quiet=True, download_dir='.')
                 print(f"[LOG] NLTK-Daten '{resource}' in das Projektverzeichnis heruntergeladen.")
-                os.environ['NLTK_DATA'] = os.getcwd()
+    os.environ['NLTK_DATA'] = os.getcwd()
 
 download_nltk_data()
 
-# Passwort für das Admin-Panel
-ADMIN_PASSWORD = 'mozji7' # ⚠️ ÄNDERE DIESES PASSWORT!
+# Sicheres Passwort-Handling
+# Passwort-Hash aus Umgebungsvariable laden
+ADMIN_PASSWORD_HASH = os.environ.get('ADMIN_PASSWORD_HASH')
+if not ADMIN_PASSWORD_HASH:
+    print("[WARNUNG] Umgebungsvariable ADMIN_PASSWORD_HASH ist nicht gesetzt. Admin-Login wird fehlschlagen.")
+    # Für lokale Entwicklung kann ein Platzhalter verwendet werden, aber nicht für die Produktion!
+    ADMIN_PASSWORD_HASH = '$2b$12$D23j9nZt2c9s5e7g8h3j2u9j2u9j2u9j2u9j2u9j2u9j2u9j2u9j'
+
+# Token-Serializer für sichere Sessions
+# Der geheime Schlüssel sollte ebenfalls eine Umgebungsvariable sein
+SECRET_KEY = os.environ.get('SECRET_KEY', '518f95dd8db2a3c4a4f0b6c2ee4a7ca71db24afd7264a9b6bdf9484c067d7792')
+s = URLSafeTimedSerializer(SECRET_KEY)
 
 # Globale Variablen für das Modell und den Vektorizer
 model = None
 
 # MongoDB-Verbindung
-MONGO_URI = 'mongodb+srv://wwll:k2AOWvBKW5H5oeZO@py.9gqajwk.mongodb.net/?retryWrites=true&w=majority&appName=py' # ⚠️ HIER URL EINFÜGEN!
+MONGO_URI = 'mongodb+srv://wwll:k2AOWvBKW5H5oeZO@py.9gqajwk.mongodb.net/?retryWrites=true&w=majority&appName=py'
 client = MongoClient(MONGO_URI)
 db = client.ai_text_detector_db
 training_data_collection = db.training_data
 
 # --- Feature Engineering: Benutzerdefinierte Transformer ---
-
 class TextFeaturesExtractor(BaseEstimator, TransformerMixin):
-    """
-    Extrahiert numerische Features aus Texten (z.B. Wortanzahl, Satzanzahl, Burstiness).
-    """
+    """Extrahiert numerische Features aus Texten (z.B. Wortanzahl, Satzanzahl, Burstiness)."""
     def fit(self, X, y=None):
         return self
 
@@ -68,8 +77,6 @@ class TextFeaturesExtractor(BaseEstimator, TransformerMixin):
         num_sentences = X.apply(lambda text: len(sent_tokenize(text)))
         num_words = X.apply(lambda text: len(text.split()))
         avg_word_length = X.apply(lambda text: sum(len(word) for word in text.split()) / len(text.split()) if len(text.split()) > 0 else 0)
-
-        # NEUES FEATURE: Burstiness (Standardabweichung der Satzlänge)
         burstiness = X.apply(lambda text: np.std([len(sentence.split()) for sentence in sent_tokenize(text)]) if len(sent_tokenize(text)) > 1 else 0)
 
         return pd.DataFrame({
@@ -80,43 +87,32 @@ class TextFeaturesExtractor(BaseEstimator, TransformerMixin):
         })
 
 # --- Daten- und Modell-Logik ---
-
 def seed_database():
     """Befüllt die Datenbank nur, wenn sie leer ist."""
     print("[LOG] Überprüfe Datenbank...")
     if training_data_collection.count_documents({}) == 0:
         print("[LOG] Datenbank ist leer. Befülle sie mit Initialdaten...")
-        initial_human_texts = [
-            'Als ich gestern Abend durch den Wald spazierte, hörte ich plötzlich ein lautes Knacken hinter mir. Ich drehte mich um, sah aber nichts. Trotzdem beschleunigte ich meine Schritte, denn die Geräusche folgten mir.',
-            'Meine Großmutter hat mir ein altes Familienrezept für Apfelkuchen gegeben. Es ist handgeschrieben auf einem zerknitterten Zettel, der Flecken von Zucker und Mehl hat.',
-            'Der letzte Roman von Haruki Murakami, den ich gelesen habe, war eine absolute Meisterleistung. Die Charaktere sind so tiefgründig und die Handlung ist surreal und doch so emotional.',
-            'Nein ich denke nicht Pascal.',
-            'Ich vermute, dass die Wurzel drei ist',
-            'Du bist dumm',
-            'Heute ist das Wetter wirklich schön, die Sonne scheint und es ist warm. Ich werde den Nachmittag im Park verbringen und ein Buch lesen.',
-            'Der Verkehr in der Stadt war heute eine Katastrophe. Ich habe fast eine Stunde gebraucht, um zur Arbeit zu kommen.',
-            'Mein Lieblingsessen ist Pizza mit extra Käse. Ich könnte sie jeden Tag essen, ohne dass sie mir über wird.',
-            'Das Konzert gestern war unglaublich! Die Band hat eine so tolle Energie auf die Bühne gebracht.',
-        ]
-        initial_ki_texts = [
-            'Das grundlegende Prinzip der Quantenverschränkung beruht auf der nicht-lokalen Korrelation von Quantenzuständen.',
-            'Die Analyse der globalen Wirtschaftsindikatoren zeigt eine deutliche Verschiebung in Richtung digitaler Dienstleistungen.',
-            'Ein rekurrierendes neuronales Netzwerk (RNN) ist eine Klasse von künstlichen neuronalen Netzen, die sich durch die Fähigkeit auszeichnen, sequenzielle Daten wie Texte oder Zeitreihen zu verarbeiten.',
-            'Das wahrscheinlichste Problem ist, dass dein Modell oder der Vektorizer immer nur ein und dasselbe Ergebnis vorhersagen.',
-            'Ja, die Logs zeigen, dass Anfragen an dein Backend gehen, aber etwas stimmt mit der Antwort nicht.',
-            'Diese Frage kann ich nicht beantworten.',
-            'Die Entwicklung nachhaltiger Energiesysteme erfordert die Integration erneuerbarer Quellen und eine effiziente Speicherung der erzeugten Energie.',
-            'In der modernen Linguistik wird der Begriff "Diskursanalyse" zur Untersuchung der sprachlichen Interaktion in ihrem sozialen Kontext verwendet.',
-            'Die Bedeutung des Internets der Dinge (IoT) wächst exponentiell, da immer mehr Geräte vernetzt werden und Daten austauschen.',
-            'Maschinelles Lernen bietet vielversprechende Ansätze zur Optimierung logistischer Prozesse und zur Vorhersage von Markttrends.'
-        ]
+        initial_human_texts = ['Als ich gestern Abend durch den Wald spazierte, hörte ich plötzlich ein lautes Knacken hinter mir. Ich drehte mich um, sah aber nichts. Trotzdem beschleunigte ich meine Schritte, denn die Geräusche folgten mir.',
+                               'Meine Großmutter hat mir ein altes Familienrezept für Apfelkuchen gegeben. Es ist handgeschrieben auf einem zerknitterten Zettel, der Flecken von Zucker und Mehl hat.',
+                               'Der letzte Roman von Haruki Murakami, den ich gelesen habe, war eine absolute Meisterleistung. Die Charaktere sind so tiefgründig und die Handlung ist surreal und doch so emotional.',
+                               'Nein ich denke nicht Pascal.','Ich vermute, dass die Wurzel drei ist','Du bist dumm',
+                               'Heute ist das Wetter wirklich schön, die Sonne scheint und es ist warm. Ich werde den Nachmittag im Park verbringen und ein Buch lesen.',
+                               'Der Verkehr in der Stadt war heute eine Katastrophe. Ich habe fast eine Stunde gebraucht, um zur Arbeit zu kommen.',
+                               'Mein Lieblingsessen ist Pizza mit extra Käse. Ich könnte sie jeden Tag essen, ohne dass sie mir über wird.',
+                               'Das Konzert gestern war unglaublich! Die Band hat eine so tolle Energie auf die Bühne gebracht.',]
+        initial_ki_texts = ['Das grundlegende Prinzip der Quantenverschränkung beruht auf der nicht-lokalen Korrelation von Quantenzuständen.',
+                            'Die Analyse der globalen Wirtschaftsindikatoren zeigt eine deutliche Verschiebung in Richtung digitaler Dienstleistungen.',
+                            'Ein rekurrierendes neuronales Netzwerk (RNN) ist eine Klasse von künstlichen neuronalen Netzen, die sich durch die Fähigkeit auszeichnen, sequenzielle Daten wie Texte oder Zeitreihen zu verarbeiten.',
+                            'Das wahrscheinlichste Problem ist, dass dein Modell oder der Vektorizer immer nur ein und dasselbe Ergebnis vorhersagen.',
+                            'Ja, die Logs zeigen, dass Anfragen an dein Backend gehen, aber etwas stimmt mit der Antwort nicht.',
+                            'Diese Frage kann ich nicht beantworten.',
+                            'Die Entwicklung nachhaltiger Energiesysteme erfordert die Integration erneuerbarer Quellen und eine effiziente Speicherung der erzeugten Energie.',
+                            'In der modernen Linguistik wird der Begriff "Diskursanalyse" zur Untersuchung der sprachlichen Interaktion in ihrem sozialen Kontext verwendet.',
+                            'Die Bedeutung des Internets der Dinge (IoT) wächst exponentiell, da immer mehr Geräte vernetzt werden und Daten austauschen.',
+                            'Maschinelles Lernen bietet vielversprechende Ansätze zur Optimierung logistischer Prozesse und zur Vorhersage von Markttrends.']
 
-        data_to_insert = [
-            {'text': text, 'label': 'menschlich', 'trained': True} for text in initial_human_texts
-        ]
-        data_to_insert.extend([
-            {'text': text, 'label': 'ki', 'trained': True} for text in initial_ki_texts
-        ])
+        data_to_insert = [{'text': text, 'label': 'menschlich', 'trained': True} for text in initial_human_texts]
+        data_to_insert.extend([{'text': text, 'label': 'ki', 'trained': True} for text in initial_ki_texts])
         training_data_collection.insert_many(data_to_insert)
         print("[LOG] Datenbank erfolgreich befüllt.")
     else:
@@ -126,10 +122,8 @@ def train_and_save_model():
     """Lädt die Daten aus der DB und trainiert das Modell neu."""
     global model
     print("[LOG] Starte Modell-Training...")
-
     try:
         training_data_list = list(training_data_collection.find({'trained': True}, {'_id': 0}))
-
         if not training_data_list:
             print("[LOG] Keine trainierbaren Daten in der Datenbank gefunden.")
             model = None
@@ -153,9 +147,7 @@ def train_and_save_model():
 
         X = df[['text']]
         y = df['label']
-
         model.fit(X, y)
-
         joblib.dump(model, 'model_pipeline.pkl')
         print("[LOG] Modell-Pipeline wurde erfolgreich neu trainiert und gespeichert.")
 
@@ -170,8 +162,17 @@ def train_and_save_model():
 seed_database()
 train_and_save_model()
 
-# --- API Endpunkte ---
+# --- Middleware zur Token-Validierung ---
+def validate_token(token):
+    try:
+        data = s.loads(token, max_age=3600)  # Token ist 1 Stunde gültig
+        if data.get('authenticated'):
+            return True
+    except (SignatureExpired, BadTimeSignature):
+        return False
+    return False
 
+# --- API Endpunkte ---
 @app.route('/predict', methods=['POST'])
 def predict():
     global model
@@ -199,34 +200,35 @@ def predict():
             'menschlich': round(mensch_prob * 100, 2),
             'ki': round(ki_prob * 100, 2)
         })
+
     except Exception as e:
         print(f"[FEHLER] Vorhersage konnte nicht durchgeführt werden: {str(e)}")
         return jsonify({'error': 'Ein Fehler bei der Vorhersage ist aufgetreten.'}), 500
 
-
 @app.route('/admin_login', methods=['POST'])
 def admin_login():
     data = request.json
-    password = data.get('password')
+    password = data.get('password').encode('utf-8')
 
-    if password == ADMIN_PASSWORD:
+    if ADMIN_PASSWORD_HASH and bcrypt.checkpw(password, ADMIN_PASSWORD_HASH.encode('utf-8')):
         print("[LOG] Admin-Login erfolgreich.")
         training_data_list = list(training_data_collection.find({}, {'_id': 0}))
-        return jsonify({'message': 'Login erfolgreich', 'data': training_data_list})
+        token = s.dumps({'authenticated': True})
+        return jsonify({'message': 'Login erfolgreich', 'data': training_data_list, 'token': token})
     else:
         print("[FEHLER] Admin-Login fehlgeschlagen: Falsches Passwort.")
         return jsonify({'error': 'Falsches Passwort.'}), 401
 
 @app.route('/add_data', methods=['POST'])
 def add_data():
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not validate_token(auth_header.split(' ')[1]):
+        print("[FEHLER] Daten hinzufügen fehlgeschlagen: Ungültiger Token.")
+        return jsonify({'error': 'Autorisierung fehlgeschlagen.'}), 401
+
     data = request.json
     text = data.get('text')
     label = data.get('label')
-    password = data.get('password')
-
-    if password != ADMIN_PASSWORD:
-        print("[FEHLER] Daten hinzufügen fehlgeschlagen: Falsches Passwort.")
-        return jsonify({'error': 'Falsches Passwort.'}), 401
 
     if not text or not label:
         print("[FEHLER] Daten hinzufügen fehlgeschlagen: Text und Label fehlen.")
@@ -234,24 +236,24 @@ def add_data():
 
     training_data_collection.insert_one({'text': text, 'label': label, 'trained': False})
     print(f"[LOG] Neuer Datensatz ({label}) zur Warteschlange hinzugefügt: '{text[:30]}...'")
-
     return jsonify({'message': 'Daten erfolgreich zur Trainingswarteschlange hinzugefügt!'})
 
 @app.route('/delete_data', methods=['POST'])
 def delete_data():
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not validate_token(auth_header.split(' ')[1]):
+        print("[FEHLER] Daten löschen fehlgeschlagen: Ungültiger Token.")
+        return jsonify({'error': 'Autorisierung fehlgeschlagen.'}), 401
+
     data = request.json
     text_to_delete = data.get('text')
-    password = data.get('password')
-
-    if password != ADMIN_PASSWORD:
-        print("[FEHLER] Daten löschen fehlgeschlagen: Falsches Passwort.")
-        return jsonify({'error': 'Falsches Passwort.'}), 401
 
     if not text_to_delete:
         print("[FEHLER] Daten löschen fehlgeschlagen: Text zum Löschen fehlt.")
         return jsonify({'error': 'Text zum Löschen ist erforderlich.'}), 400
 
     result = training_data_collection.delete_one({'text': text_to_delete})
+
     if result.deleted_count > 0:
         print(f"[LOG] Datensatz erfolgreich gelöscht: '{text_to_delete[:30]}...'")
         return jsonify({'message': 'Daten erfolgreich gelöscht.'})
@@ -259,15 +261,12 @@ def delete_data():
         print("[FEHLER] Daten löschen fehlgeschlagen: Text nicht in der DB gefunden.")
         return jsonify({'error': 'Text nicht gefunden.'}), 404
 
-# NEUER ENDPUNKT: Modell neu trainieren
 @app.route('/retrain_model', methods=['POST'])
 def retrain_model():
-    data = request.json
-    password = data.get('password')
-
-    if password != ADMIN_PASSWORD:
-        print("[FEHLER] Retraining fehlgeschlagen: Falsches Passwort.")
-        return jsonify({'error': 'Falsches Passwort.'}), 401
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not validate_token(auth_header.split(' ')[1]):
+        print("[FEHLER] Retraining fehlgeschlagen: Ungültiger Token.")
+        return jsonify({'error': 'Autorisierung fehlgeschlagen.'}), 401
 
     try:
         train_and_save_model()
@@ -278,14 +277,21 @@ def retrain_model():
 
 @app.route('/get_data_status', methods=['GET'])
 def get_data_status():
-    password = request.args.get('password')
-    if password != ADMIN_PASSWORD:
-        return jsonify({'error': 'Falsches Passwort.'}), 401
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not validate_token(auth_header.split(' ')[1]):
+        return jsonify({'error': 'Autorisierung fehlgeschlagen.'}), 401
 
     try:
         total_data = list(training_data_collection.find({}, {'_id': 0, 'text': 1, 'label': 1, 'trained': 1}))
+
+        word_counts = {
+            'menschlich': sum(len(d['text'].split()) for d in total_data if d['label'] == 'menschlich'),
+            'ki': sum(len(d['text'].split()) for d in total_data if d['label'] == 'ki')
+        }
+        word_counts['total'] = word_counts['menschlich'] + word_counts['ki']
+
         print("[LOG] Datenstatus erfolgreich abgerufen.")
-        return jsonify({'data': total_data})
+        return jsonify({'data': total_data, 'word_counts': word_counts})
     except Exception as e:
         print(f"[FEHLER] Fehler beim Abrufen des Datenstatus: {str(e)}")
         return jsonify({'error': f'Fehler beim Abrufen der Daten: {str(e)}'}), 500

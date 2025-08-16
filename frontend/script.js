@@ -31,11 +31,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const humanCountSpan = document.getElementById('human-count');
     const kiCountSpan = document.getElementById('ki-count');
     const untrainiertCountSpan = document.getElementById('untrainiert-count');
+    const totalWordsSpan = document.getElementById('total-words');
     const retrainBtn = document.getElementById('retrain-btn');
 
     // WICHTIG: Ersetzen Sie DIESE URL durch die URL Ihrer gehosteten Render-App
     const API_BASE_URL = 'https://b-kb9u.onrender.com';
     let currentTrainingData = [];
+    let adminToken = localStorage.getItem('adminToken') || null;
 
     // --- Allgemeine Hilfsfunktion für Toast-Nachrichten ---
     function showToast(message, type = 'info', duration = 3000) {
@@ -81,8 +83,8 @@ document.addEventListener('DOMContentLoaded', () => {
             navLinks.forEach(navLink => navLink.classList.remove('active'));
             link.classList.add('active');
 
-            if (targetId === 'admin-panel' && !loginForm.classList.contains('hidden')) {
-                updateTrainingDataStatus();
+            if (targetId === 'admin-panel') {
+                checkAdminSession();
             }
         });
     });
@@ -98,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         resultContainer.classList.add('hidden');
         analyzeBtn.disabled = true;
-        analyzeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analysiere...'; // Lade-Symbol
+        analyzeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analysiere...';
 
         try {
             showToast('Text wird analysiert...', 'info', 2000);
@@ -142,6 +144,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Admin-Logik ---
+    async function checkAdminSession() {
+        if (adminToken) {
+            // Versuche, mit dem gespeicherten Token Daten abzurufen
+            const response = await fetch(`${API_BASE_URL}/get_data_status`, {
+                headers: { 'Authorization': `Bearer ${adminToken}` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                currentTrainingData = data.data;
+                renderTrainingData(data.word_counts);
+                loginForm.classList.add('hidden');
+                trainingDataView.classList.remove('hidden');
+                return;
+            }
+        }
+        // Zeige Login-Formular, wenn kein Token oder ungültig
+        loginForm.classList.remove('hidden');
+        trainingDataView.classList.add('hidden');
+    }
+
     passwordSubmitBtn.addEventListener('click', async () => {
         const password = passwordInput.value;
         if (!password) {
@@ -164,8 +186,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             if (response.ok) {
+                adminToken = data.token;
+                localStorage.setItem('adminToken', adminToken);
                 currentTrainingData = data.data;
-                renderTrainingData();
+                renderTrainingData(data.word_counts);
                 loginForm.classList.add('hidden');
                 trainingDataView.classList.remove('hidden');
                 showToast('Login erfolgreich!', 'success');
@@ -186,9 +210,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Funktion zum Hinzufügen von Texten
     async function addTextToList(label) {
         const text = newTextInput.value.trim();
-        const password = passwordInput.value;
         if (!text) {
             showToast('Bitte Text eingeben.', 'error');
+            return;
+        }
+        if (!adminToken) {
+            showToast('Fehler: Nicht angemeldet.', 'error');
+            checkAdminSession();
             return;
         }
 
@@ -199,8 +227,11 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch(`${API_BASE_URL}/add_data`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text, label, password })
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${adminToken}`
+                },
+                body: JSON.stringify({ text, label })
             });
 
             const data = await response.json();
@@ -208,10 +239,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 currentTrainingData.push({ text, label, trained: false });
                 newTextInput.value = '';
-                renderTrainingData();
+                await updateTrainingDataStatus();
                 showToast('✅ Daten erfolgreich zur Warteschlange hinzugefügt!', 'success');
             } else {
                 showToast(`❌ Fehler: ${data.error}`, 'error');
+                if (response.status === 401) {
+                    adminToken = null;
+                    localStorage.removeItem('adminToken');
+                    checkAdminSession();
+                }
             }
         } catch (error) {
             showToast('❌ Verbindungsproblem beim Hinzufügen.', 'error');
@@ -226,24 +262,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Funktion zum Löschen eines Texts
     async function deleteText(text, index) {
-        const password = passwordInput.value;
+        if (!adminToken) {
+            showToast('Fehler: Nicht angemeldet.', 'error');
+            checkAdminSession();
+            return;
+        }
+
         showToast('Lösche Daten...', 'info');
 
         try {
             const response = await fetch(`${API_BASE_URL}/delete_data`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text, password })
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${adminToken}`
+                },
+                body: JSON.stringify({ text })
             });
 
             const data = await response.json();
 
             if (response.ok) {
                 currentTrainingData.splice(index, 1);
-                renderTrainingData();
+                await updateTrainingDataStatus();
                 showToast('✅ Daten erfolgreich gelöscht!', 'success');
             } else {
                 showToast(`❌ Fehler: ${data.error}`, 'error');
+                if (response.status === 401) {
+                    adminToken = null;
+                    localStorage.removeItem('adminToken');
+                    checkAdminSession();
+                }
             }
         } catch (error) {
             showToast('❌ Verbindungsproblem beim Löschen.', 'error');
@@ -251,7 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Funktion zum Rendern der Trainingsdaten-Liste
-    function renderTrainingData() {
+    function renderTrainingData(wordCounts) {
         dataList.innerHTML = '';
         let humanCount = 0;
         let kiCount = 0;
@@ -281,11 +330,19 @@ document.addEventListener('DOMContentLoaded', () => {
         humanCountSpan.textContent = humanCount;
         kiCountSpan.textContent = kiCount;
         untrainiertCountSpan.textContent = untrainedCount;
+        if (wordCounts) {
+            totalWordsSpan.textContent = wordCounts.total;
+        }
     }
 
     // Funktion zum Neu-Trainieren des Modells
     retrainBtn.addEventListener('click', async () => {
-        const password = passwordInput.value;
+        if (!adminToken) {
+            showToast('Fehler: Nicht angemeldet.', 'error');
+            checkAdminSession();
+            return;
+        }
+
         showToast('Modell-Training gestartet...', 'info');
         retrainBtn.disabled = true;
         retrainBtn.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Trainiere...';
@@ -293,8 +350,10 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch(`${API_BASE_URL}/retrain_model`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ password: password })
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${adminToken}`
+                }
             });
 
             const data = await response.json();
@@ -304,6 +363,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 setTimeout(updateTrainingDataStatus, 3000); // Warte 3s, bis DB-Update
             } else {
                 showToast(`❌ Fehler: ${data.error}`, 'error');
+                if (response.status === 401) {
+                    adminToken = null;
+                    localStorage.removeItem('adminToken');
+                    checkAdminSession();
+                }
             }
         } catch (error) {
             showToast('❌ Verbindungsproblem beim Training.', 'error');
@@ -314,20 +378,35 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     async function updateTrainingDataStatus() {
-        const password = passwordInput.value;
+        if (!adminToken) {
+            console.log("Nicht angemeldet, kann Datenstatus nicht aktualisieren.");
+            return;
+        }
         try {
-            const response = await fetch(`${API_BASE_URL}/get_data_status?password=${password}`);
+            const response = await fetch(`${API_BASE_URL}/get_data_status`, {
+                headers: { 'Authorization': `Bearer ${adminToken}` }
+            });
             const data = await response.json();
             if (response.ok) {
                 currentTrainingData = data.data;
-                renderTrainingData();
+                renderTrainingData(data.word_counts);
             } else {
                 console.error("Fehler beim Abrufen der Daten:", data.error);
                 showToast(`Fehler beim Aktualisieren des Datenstatus: ${data.error}`, 'error');
+                if (response.status === 401) {
+                    adminToken = null;
+                    localStorage.removeItem('adminToken');
+                    checkAdminSession();
+                }
             }
         } catch (error) {
             console.error("Fehler beim Abrufen der Daten:", error);
             showToast('Verbindungsproblem beim Abrufen des Datenstatus.', 'error');
         }
+    }
+
+    // Initialen Check beim Laden der Seite
+    if (document.getElementById('admin-panel').classList.contains('active')) {
+        checkAdminSession();
     }
 });
