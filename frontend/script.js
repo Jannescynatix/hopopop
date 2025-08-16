@@ -5,6 +5,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const navLinks = document.querySelectorAll('.nav-link');
     const pages = document.querySelectorAll('.page-section');
     const body = document.body;
+    const burgerMenu = document.getElementById('burger-menu');
+    const navMenu = document.querySelector('.nav-menu');
 
     // App-Elemente
     const analyzeBtn = document.getElementById('analyze-btn');
@@ -61,10 +63,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Navigations-Logik ---
+    burgerMenu.addEventListener('click', () => {
+        navMenu.classList.toggle('active');
+    });
+
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
             const targetId = e.target.dataset.target;
+
+            // Schließe das Menü bei Klick (für mobile Ansicht)
+            navMenu.classList.remove('active');
 
             pages.forEach(page => page.classList.remove('active'));
             document.getElementById(targetId).classList.add('active');
@@ -89,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         resultContainer.classList.add('hidden');
         analyzeBtn.disabled = true;
-        analyzeBtn.textContent = 'Analysiere...';
+        analyzeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analysiere...'; // Lade-Symbol
 
         try {
             showToast('Text wird analysiert...', 'info', 2000);
@@ -279,6 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = passwordInput.value;
         showToast('Modell-Training gestartet...', 'info');
         retrainBtn.disabled = true;
+        retrainBtn.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Trainiere...';
 
         try {
             const response = await fetch(`${API_BASE_URL}/retrain_model`, {
@@ -299,6 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast('❌ Verbindungsproblem beim Training.', 'error');
         } finally {
             retrainBtn.disabled = false;
+            retrainBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Modell neu trainieren';
         }
     });
 

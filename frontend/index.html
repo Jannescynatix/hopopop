@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KI-Text-Detektor Pro</title>
+    <title>KI-Text-Detektor</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -11,16 +11,21 @@
 <header>
     <nav>
         <div class="logo">KI-Detektor</div>
-        <ul>
+        <ul class="nav-menu">
             <li><a href="#" class="nav-link active" data-target="main-app">Analyse</a></li>
             <li><a href="#" class="nav-link" data-target="admin-panel">Admin-Panel</a></li>
+            <li><a href="#" class="nav-link" data-target="about-us">Über uns</a></li>
+            <li><a href="#" class="nav-link" data-target="legal-info">Rechtliches</a></li>
         </ul>
+        <button class="burger-menu" id="burger-menu">
+            <i class="fas fa-bars"></i>
+        </button>
     </nav>
 </header>
 
 <main id="main-app" class="page-section active">
     <div class="container">
-        <h1>KI-Text-Detektor Pro</h1>
+        <h1>KI-Text-Detektor</h1>
         <p>Geben Sie einen Text ein, um die Wahrscheinlichkeit zu erfahren, ob er von einem Menschen oder einer KI geschrieben wurde.</p>
         <textarea id="text-input" placeholder="Geben Sie hier Ihren Text ein..." required></textarea>
         <button id="analyze-btn"><i class="fas fa-search"></i> Analysieren</button>
@@ -43,7 +48,7 @@
         <h2>Admin-Panel - Trainingsdaten</h2>
 
         <div id="login-form">
-            <p>Bitte geben Sie das Admin-Passwort ein.</p>
+            <p>Admin-Passwort benötigt</p>
             <input type="password" id="admin-password-input" placeholder="Passwort" autocomplete="off">
             <button id="password-submit-btn"><i class="fas fa-sign-in-alt"></i> Login</button>
             <p id="login-error-msg" class="error-msg"></p>
@@ -80,7 +85,7 @@
 
             <div class="training-control-section">
                 <h3>Modell-Training</h3>
-                <p>Klicken Sie hier, um das Modell mit allen neuen Daten neu zu trainieren. Dies kann bei großen Datenmengen einige Minuten dauern.</p>
+                <p>Klicken Sie hier, um das Modell mit allen neuen Daten neu zu trainieren.</p>
                 <button id="retrain-btn"><i class="fas fa-sync-alt"></i> Modell neu trainieren</button>
                 <p id="retrain-status-msg" class="status-msg"></p>
             </div>
@@ -90,8 +95,30 @@
     </div>
 </section>
 
+<section id="about-us" class="page-section hidden">
+    <div class="container">
+        <h2>Über Uns</h2>
+        <p>Dies ist ein Projekt zur Entwicklung eines KI-Text-Detektors. Unser Ziel ist es, ein nützliches und transparentes Werkzeug zu schaffen, das auf maschinellem Lernen basiert.</p>
+        <p>Das System lernt, menschliche und KI-generierte Texte anhand von verschiedenen Merkmalen zu unterscheiden, darunter Wortwahl und Textstruktur (die sogenannte "Burstiness"). Wir glauben daran, dass die Transparenz in der KI-Entwicklung entscheidend ist, weshalb dieses Projekt mit offenen Standards und einer klaren Logik entwickelt wurde.</p>
+    </div>
+</section>
+
+<section id="legal-info" class="page-section hidden">
+    <div class="container">
+        <h2>Rechtliche Hinweise & Nutzungsbedingungen</h2>
+        <h3>Nutzung des Dienstes</h3>
+        <p>Dieses Tool ist ein experimentelles und lehrreiches Projekt. Es ist nicht dafür gedacht, Entscheidungen zu treffen, die das akademische oder berufliche Leben einer Person beeinflussen.</p>
+        <p>Die von diesem Tool generierten Ergebnisse dienen nur als Orientierung. Sie können Fehler enthalten und sollten nicht als endgültige Beweise verwendet werden.</p>
+        <p>Durch die Nutzung dieses Dienstes erklären Sie sich damit einverstanden, dass Sie die Verantwortung für alle Entscheidungen tragen, die auf den erhaltenen Informationen basieren.</p>
+        <h3>Daten & Datenschutz</h3>
+        <p>Alle eingegebenen Texte werden ausschließlich zur Analyse verarbeitet. Wir speichern keine persönlichen Daten. Die im Admin-Panel hinzugefügten Trainingsdaten werden in einer privaten Datenbank gesichert und nur zur Verbesserung des Modells verwendet.</p>
+    </div>
+</section>
+
 <footer>
-    <p>&copy; 2025 KI-Text-Detektor Pro. Alle Rechte vorbehalten.</p>
+    <p>&copy; 2025 KI-Text-Detektor von Jannes Arda Cullmann. Alle Rechte vorbehalten.
+    <p>Version: 1.0.0</p>
+    <p>Dieses Tool ist nicht dafür geeignet, Entscheidungen zu fällen, die die Karriere (z. B. Schule, Studium, Ausbildung, etc....) oder die Noten einer Person beeinflussen.</p>
 </footer>
 
 <script src="script.js"></script>
