@@ -10,10 +10,20 @@ from sklearn.pipeline import Pipeline
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.compose import ColumnTransformer
+import numpy as np
+import nltk
+from nltk.tokenize import sent_tokenize
 
 # Flask-App initialisieren
 app = Flask(__name__)
 CORS(app)
+
+# Stelle sicher, dass NLTK-Daten heruntergeladen sind (einmalig)
+try:
+    nltk.data.find('tokenizers/punkt')
+except nltk.downloader.DownloadError:
+    nltk.download('punkt', quiet=True)
+
 
 # Passwort für das Admin-Panel
 ADMIN_PASSWORD = 'mozji7' # ⚠️ ÄNDERE DIESES PASSWORT!
@@ -31,20 +41,29 @@ training_data_collection = db.training_data
 
 class TextFeaturesExtractor(BaseEstimator, TransformerMixin):
     """
-    Extrahiert numerische Features aus Texten (z.B. Wortanzahl, Satzanzahl).
+    Extrahiert numerische Features aus Texten (z.B. Wortanzahl, Satzanzahl, Burstiness).
     """
     def fit(self, X, y=None):
         return self
 
     def transform(self, X, y=None):
-        num_sentences = X.apply(lambda text: len(re.split('[.!?]', text)))
+        # Konvertiere X in eine Pandas Series, falls es ein DataFrame ist
+        if isinstance(X, pd.DataFrame):
+            X = X['text']
+
+        num_sentences = X.apply(lambda text: len(sent_tokenize(text)))
         num_words = X.apply(lambda text: len(text.split()))
         avg_word_length = X.apply(lambda text: sum(len(word) for word in text.split()) / len(text.split()) if len(text.split()) > 0 else 0)
+
+        # NEUES FEATURE: Burstiness (Standardabweichung der Satzlänge)
+        # Teilt den Text in Sätze, zählt die Wörter in jedem Satz und berechnet dann die Standardabweichung.
+        burstiness = X.apply(lambda text: np.std([len(sentence.split()) for sentence in sent_tokenize(text)]) if len(sent_tokenize(text)) > 1 else 0)
 
         return pd.DataFrame({
             'num_sentences': num_sentences,
             'num_words': num_words,
-            'avg_word_length': avg_word_length
+            'avg_word_length': avg_word_length,
+            'burstiness': burstiness  # Das neue Merkmal
         })
 
 # --- Daten- und Modell-Logik ---
