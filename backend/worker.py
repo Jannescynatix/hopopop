@@ -1,0 +1,189 @@
+# backend/worker.py
+import joblib
+import pandas as pd
+from pymongo import MongoClient
+import re
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.pipeline import Pipeline
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.compose import ColumnTransformer
+import numpy as np
+import nltk
+from nltk.tokenize import sent_tokenize
+import os
+import bcrypt
+
+# --- NLTK-Daten herunterladen und überprüfen ---
+def download_nltk_data():
+    """Lädt die NLTK-Daten herunter, falls sie nicht vorhanden sind."""
+    required_resources = ['punkt']
+    for resource in required_resources:
+        try:
+            nltk.data.find(f'tokenizers/{resource}')
+            print(f"[LOG] NLTK-Daten '{resource}' bereits vorhanden.")
+        except LookupError:
+            print(f"[LOG] NLTK-Daten '{resource}' nicht gefunden. Starte Download...")
+            try:
+                nltk.download(resource, quiet=True)
+                print(f"[LOG] NLTK-Daten '{resource}' erfolgreich heruntergeladen.")
+            except Exception:
+                print(f"[LOG] Globaler NLTK-Download für '{resource}' fehlgeschlagen. Versuche, in das Projektverzeichnis herunterzuladen.")
+                nltk.download(resource, quiet=True, download_dir='.')
+                print(f"[LOG] NLTK-Daten '{resource}' in das Projektverzeichnis heruntergeladen.")
+    os.environ['NLTK_DATA'] = os.getcwd()
+
+# Sicheres Passwort-Handling
+ADMIN_PASSWORD_HASH = os.environ.get('ADMIN_PASSWORD_HASH', None)
+if not ADMIN_PASSWORD_HASH:
+    print("[WARNUNG] Umgebungsvariable ADMIN_PASSWORD_HASH ist nicht gesetzt. Admin-Login wird fehlschlagen.")
+
+# Globale Variablen für das Modell
+model = None
+
+# MongoDB-Verbindung
+MONGO_URI = 'mongodb+srv://wwll:k2AOWvBKW5H5oeZO@py.9gqajwk.mongodb.net/?retryWrites=true&w=majority&appName=py'
+client = MongoClient(MONGO_URI)
+db = client.ai_text_detector_db
+training_data_collection = db.training_data
+
+# --- Feature Engineering: Benutzerdefinierte Transformer ---
+class TextFeaturesExtractor(BaseEstimator, TransformerMixin):
+    """Extrahiert numerische Features aus Texten (z.B. Wortanzahl, Satzanzahl, Burstiness)."""
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X, y=None):
+        if isinstance(X, pd.DataFrame):
+            X = X['text']
+
+        num_sentences = X.apply(lambda text: len(sent_tokenize(text)))
+        num_words = X.apply(lambda text: len(text.split()))
+        avg_word_length = X.apply(lambda text: sum(len(word) for word in text.split()) / len(text.split()) if len(text.split()) > 0 else 0)
+        burstiness = X.apply(lambda text: np.std([len(sentence.split()) for sentence in sent_tokenize(text)]) if len(sent_tokenize(text)) > 1 else 0)
+
+        return pd.DataFrame({
+            'num_sentences': num_sentences,
+            'num_words': num_words,
+            'avg_word_length': avg_word_length,
+            'burstiness': burstiness
+        })
+
+# --- Daten- und Modell-Logik ---
+def seed_database():
+    """Befüllt die Datenbank nur, wenn sie leer ist."""
+    print("[LOG] Überprüfe Datenbank...")
+    if training_data_collection.count_documents({}) == 0:
+        print("[LOG] Datenbank ist leer. Befülle sie mit Initialdaten...")
+        initial_human_texts = ['Als ich gestern Abend durch den Wald spazierte, hörte ich plötzlich ein lautes Knacken hinter mir. Ich drehte mich um, sah aber nichts. Trotzdem beschleunigte ich meine Schritte, denn die Geräusche folgten mir.',
+                               'Meine Großmutter hat mir ein altes Familienrezept für Apfelkuchen gegeben. Es ist handgeschrieben auf einem zerknitterten Zettel, der Flecken von Zucker und Mehl hat.',
+                               'Der letzte Roman von Haruki Murakami, den ich gelesen habe, war eine absolute Meisterleistung. Die Charaktere sind so tiefgründig und die Handlung ist surreal und doch so emotional.',
+                               'Nein ich denke nicht Pascal.','Ich vermute, dass die Wurzel drei ist','Du bist dumm',
+                               'Heute ist das Wetter wirklich schön, die Sonne scheint und es ist warm. Ich werde den Nachmittag im Park verbringen und ein Buch lesen.',
+                               'Der Verkehr in der Stadt war heute eine Katastrophe. Ich habe fast eine Stunde gebraucht, um zur Arbeit zu kommen.',
+                               'Mein Lieblingsessen ist Pizza mit extra Käse. Ich könnte sie jeden Tag essen, ohne dass sie mir über wird.',
+                               'Das Konzert gestern war unglaublich! Die Band hat eine so tolle Energie auf die Bühne gebracht.',]
+        initial_ki_texts = ['Das grundlegende Prinzip der Quantenverschränkung beruht auf der nicht-lokalen Korrelation von Quantenzuständen.',
+                            'Die Analyse der globalen Wirtschaftsindikatoren zeigt eine deutliche Verschiebung in Richtung digitaler Dienstleistungen.',
+                            'Ein rekurrierendes neuronales Netzwerk (RNN) ist eine Klasse von künstlichen neuronalen Netzen, die sich durch die Fähigkeit auszeichnen, sequenzielle Daten wie Texte oder Zeitreihen zu verarbeiten.',
+                            'Das wahrscheinlichste Problem ist, dass dein Modell oder der Vektorizer immer nur ein und dasselbe Ergebnis vorhersagen.',
+                            'Ja, die Logs zeigen, dass Anfragen an dein Backend gehen, aber etwas stimmt mit der Antwort nicht.',
+                            'Diese Frage kann ich nicht beantworten.',
+                            'Die Entwicklung nachhaltiger Energiesysteme erfordert die Integration erneuerbarer Quellen und eine effiziente Speicherung der erzeugten Energie.',
+                            'In der modernen Linguistik wird der Begriff "Diskursanalyse" zur Untersuchung der sprachlichen Interaktion in ihrem sozialen Kontext verwendet.',
+                            'Die Bedeutung des Internets der Dinge (IoT) wächst exponentiell, da immer mehr Geräte vernetzt werden und Daten austauschen.',
+                            'Maschinelles Lernen bietet vielversprechende Ansätze zur Optimierung logistischer Prozesse und zur Vorhersage von Markttrends.']
+
+        data_to_insert = [{'text': text, 'label': 'menschlich', 'trained': True} for text in initial_human_texts]
+        data_to_insert.extend([{'text': text, 'label': 'ki', 'trained': True} for text in initial_ki_texts])
+        training_data_collection.insert_many(data_to_insert)
+        print("[LOG] Datenbank erfolgreich befüllt.")
+    else:
+        print("[LOG] Datenbank enthält bereits Daten. Überspringe Befüllung.")
+
+def train_and_save_model():
+    """Lädt die Daten aus der DB und trainiert das Modell neu."""
+    global model
+    print("[LOG] Starte Modell-Training...")
+    try:
+        training_data_list = list(training_data_collection.find({}, {'_id': 0}))
+        if not training_data_list:
+            print("[LOG] Keine trainierbaren Daten in der Datenbank gefunden.")
+            model = None
+            return
+
+        df = pd.DataFrame(training_data_list)
+        print(f"[LOG] {len(df)} Datensätze für das Training geladen.")
+
+        preprocessor = ColumnTransformer(
+            transformers=[
+                ('text_tfidf', TfidfVectorizer(ngram_range=(1, 3), max_features=1000), 'text'),
+                ('text_features', TextFeaturesExtractor(), 'text')
+            ],
+            remainder='passthrough'
+        )
+
+        model = Pipeline(steps=[
+            ('preprocessor', preprocessor),
+            ('classifier', MultinomialNB())
+        ])
+
+        X = df[['text']]
+        y = df['label']
+        model.fit(X, y)
+        joblib.dump(model, 'model_pipeline.pkl')
+        print("[LOG] Modell-Pipeline wurde erfolgreich neu trainiert und gespeichert.")
+
+        training_data_collection.update_many({'trained': False}, {'$set': {'trained': True}})
+        print("[LOG] Alle neuen Daten als 'trained' markiert.")
+        print("[STATUS] TRAINING ABGESCHLOSSEN.")
+
+    except Exception as e:
+        print(f"[FEHLER] Fehler beim Neu-Trainieren des Modells: {str(e)}")
+        raise e
+
+# Funktionen für Vorhersage und Datenabruf
+def get_prediction(text_df):
+    global model
+    try:
+        if model is None:
+            # Versuche, das Modell aus der Datei zu laden
+            if os.path.exists('model_pipeline.pkl'):
+                model = joblib.load('model_pipeline.pkl')
+                print("[LOG] Modell erfolgreich aus 'model_pipeline.pkl' geladen.")
+            else:
+                raise FileNotFoundError("Modell-Datei 'model_pipeline.pkl' nicht gefunden.")
+
+        probabilities = model.predict_proba(text_df)[0]
+        classes = model.classes_
+        mensch_prob = float(probabilities[classes == 'menschlich'])
+        ki_prob = float(probabilities[classes == 'ki'])
+
+        return {
+            'menschlich': round(mensch_prob * 100, 2),
+            'ki': round(ki_prob * 100, 2)
+        }
+    except Exception as e:
+        print(f"[FEHLER] Vorhersage konnte nicht durchgeführt werden: {str(e)}")
+        raise e
+
+def add_data_to_db(text, label):
+    training_data_collection.insert_one({'text': text, 'label': label, 'trained': False})
+    print(f"[LOG] Neuer Datensatz ({label}) zur Warteschlange hinzugefügt: '{text[:30]}...'")
+
+def delete_data_from_db(text):
+    result = training_data_collection.delete_one({'text': text})
+    return result.deleted_count
+
+def get_data_status_from_db():
+    total_data = list(training_data_collection.find({}, {'_id': 0, 'text': 1, 'label': 1, 'trained': 1}))
+    word_counts = {
+        'menschlich': sum(len(d['text'].split()) for d in total_data if d['label'] == 'menschlich'),
+        'ki': sum(len(d['text'].split()) for d in total_data if d['label'] == 'ki')
+    }
+    word_counts['total'] = word_counts['menschlich'] + word_counts['ki']
+    return total_data, word_counts
+
+download_nltk_data()
+seed_database()
+train_and_save_model()
