@@ -34,18 +34,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalWordsSpan = document.getElementById('total-words');
     const retrainBtn = document.getElementById('retrain-btn');
 
-    // NEUE Admin-Statistik-Elemente
-    const totalWordsAllSpan = document.getElementById('total-words-all');
-    const totalCharsAllSpan = document.getElementById('total-chars-all');
-    const totalSentencesAllSpan = document.getElementById('total-sentences-all');
-    const humanWordsSpan = document.getElementById('human-words');
-    const humanCharsSpan = document.getElementById('human-chars');
-    const kiWordsSpan = document.getElementById('ki-words');
-    const kiCharsSpan = document.getElementById('ki-chars');
-    const kiWordsList = document.getElementById('ki-words-list');
-    const humanWordsList = document.getElementById('human-words-list');
-    const allWordsList = document.getElementById('all-words-list');
-
     // WICHTIG: Ersetzen Sie DIESE URL durch die URL Ihrer gehosteten Render-App
     const API_BASE_URL = 'https://b-kb9u.onrender.com';
     let currentTrainingData = [];
@@ -162,12 +150,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(`${API_BASE_URL}/get_data_status`, {
                 headers: { 'Authorization': `Bearer ${adminToken}` }
             });
-
             if (response.ok) {
                 const data = await response.json();
                 currentTrainingData = data.data;
                 renderTrainingData(data.word_counts);
-                await fetchAndRenderStats(); // Neu: Statistiken abrufen und anzeigen
                 loginForm.classList.add('hidden');
                 trainingDataView.classList.remove('hidden');
                 return;
@@ -204,7 +190,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('adminToken', adminToken);
                 currentTrainingData = data.data;
                 renderTrainingData(data.word_counts);
-                await fetchAndRenderStats(); // Neu: Statistiken abrufen und anzeigen
                 loginForm.classList.add('hidden');
                 trainingDataView.classList.remove('hidden');
                 showToast('Login erfolgreich!', 'success');
@@ -238,6 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast('Füge Daten hinzu...', 'info');
         addHumanBtn.disabled = true;
         addKiBtn.disabled = true;
+
         try {
             const response = await fetch(`${API_BASE_URL}/add_data`, {
                 method: 'POST',
@@ -254,7 +240,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentTrainingData.push({ text, label, trained: false });
                 newTextInput.value = '';
                 await updateTrainingDataStatus();
-                await fetchAndRenderStats(); // Neu: Statistiken aktualisieren
                 showToast('✅ Daten erfolgreich zur Warteschlange hinzugefügt!', 'success');
             } else {
                 showToast(`❌ Fehler: ${data.error}`, 'error');
@@ -284,6 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         showToast('Lösche Daten...', 'info');
+
         try {
             const response = await fetch(`${API_BASE_URL}/delete_data`, {
                 method: 'POST',
@@ -299,7 +285,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 currentTrainingData.splice(index, 1);
                 await updateTrainingDataStatus();
-                await fetchAndRenderStats(); // Neu: Statistiken aktualisieren
                 showToast('✅ Daten erfolgreich gelöscht!', 'success');
             } else {
                 showToast(`❌ Fehler: ${data.error}`, 'error');
@@ -320,6 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let humanCount = 0;
         let kiCount = 0;
         let untrainedCount = 0;
+
         currentTrainingData.forEach((item, index) => {
             if (item.label === 'menschlich') humanCount++;
             else kiCount++;
@@ -349,55 +335,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // NEUE Funktion: Ruft Statistiken ab und rendert sie
-    async function fetchAndRenderStats() {
-        if (!adminToken) {
-            console.log("Nicht angemeldet, kann Statistiken nicht abrufen.");
-            return;
-        }
-        try {
-            const response = await fetch(`${API_BASE_URL}/get_stats`, {
-                headers: { 'Authorization': `Bearer ${adminToken}` }
-            });
-            const data = await response.json();
-
-            if (response.ok) {
-                // Gesamtstatistiken
-                totalWordsAllSpan.textContent = data.total_words;
-                totalCharsAllSpan.textContent = data.total_chars;
-                totalSentencesAllSpan.textContent = data.total_sentences;
-
-                // Kategorienspezifische Statistiken
-                humanWordsSpan.textContent = data.human.word_count;
-                humanCharsSpan.textContent = data.human.char_count;
-                kiWordsSpan.textContent = data.ki.word_count;
-                kiCharsSpan.textContent = data.ki.char_count;
-
-                // Häufigste Wörter Listen
-                renderWordList(kiWordsList, data.ki.frequent_words);
-                renderWordList(humanWordsList, data.human.frequent_words);
-                renderWordList(allWordsList, data.total_frequent_words);
-
-            } else {
-                console.error("Fehler beim Abrufen der Statistiken:", data.error);
-                showToast(`Fehler beim Abrufen der Statistiken: ${data.error}`, 'error');
-            }
-        } catch (error) {
-            console.error("Fehler bei der API-Anfrage für Statistiken:", error);
-            showToast('Verbindungsproblem beim Abrufen der Statistiken.', 'error');
-        }
-    }
-
-    // NEUE Funktion: Rendert eine Liste von Wörtern in ein <ul> oder <ol> Element
-    function renderWordList(element, wordList) {
-        element.innerHTML = '';
-        wordList.forEach(([word, count]) => {
-            const li = document.createElement('li');
-            li.textContent = `${word} (${count})`;
-            element.appendChild(li);
-        });
-    }
-
     // Funktion zum Neu-Trainieren des Modells
     retrainBtn.addEventListener('click', async () => {
         if (!adminToken) {
@@ -405,9 +342,11 @@ document.addEventListener('DOMContentLoaded', () => {
             checkAdminSession();
             return;
         }
+
         showToast('Modell-Training gestartet...', 'info');
         retrainBtn.disabled = true;
         retrainBtn.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Trainiere...';
+
         try {
             const response = await fetch(`${API_BASE_URL}/retrain_model`, {
                 method: 'POST',
@@ -416,7 +355,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Authorization': `Bearer ${adminToken}`
                 }
             });
+
             const data = await response.json();
+
             if (response.ok) {
                 showToast('✅ Modell-Training gestartet. Schau in die Logs für Details!', 'success', 5000);
                 setTimeout(updateTrainingDataStatus, 3000); // Warte 3s, bis DB-Update
@@ -445,7 +386,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(`${API_BASE_URL}/get_data_status`, {
                 headers: { 'Authorization': `Bearer ${adminToken}` }
             });
-
             const data = await response.json();
             if (response.ok) {
                 currentTrainingData = data.data;

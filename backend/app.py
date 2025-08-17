@@ -16,10 +16,6 @@ from nltk.tokenize import sent_tokenize
 import os
 import bcrypt
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadTimeSignature
-from functools import wraps
-
-# NEU: Importiere die Funktion aus der neuen Datei
-from .stats_backend import get_stats_data
 
 # Flask-App initialisieren
 app = Flask(__name__)
@@ -166,23 +162,15 @@ def train_and_save_model():
 seed_database()
 train_and_save_model()
 
-# NEUE FUNKTION: Decorator zur Überprüfung des Admin-Tokens
-def token_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        auth_header = request.headers.get('Authorization')
-        if not auth_header:
-            return jsonify({'error': 'Autorisierungstoken fehlt.'}), 401
-
-        token = auth_header.split(' ')[1]
-        try:
-            data = s.loads(token, max_age=3600)  # Token ist 1 Stunde gültig
-            if not data.get('authenticated'):
-                raise ValueError
-        except (SignatureExpired, BadTimeSignature, ValueError):
-            return jsonify({'error': 'Autorisierung fehlgeschlagen oder abgelaufen.'}), 401
-        return f(*args, **kwargs)
-    return decorated
+# --- Middleware zur Token-Validierung ---
+def validate_token(token):
+    try:
+        data = s.loads(token, max_age=3600)  # Token ist 1 Stunde gültig
+        if data.get('authenticated'):
+            return True
+    except (SignatureExpired, BadTimeSignature):
+        return False
+    return False
 
 # --- API Endpunkte ---
 @app.route('/predict', methods=['POST'])
@@ -232,8 +220,12 @@ def admin_login():
         return jsonify({'error': 'Falsches Passwort.'}), 401
 
 @app.route('/add_data', methods=['POST'])
-@token_required
 def add_data():
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not validate_token(auth_header.split(' ')[1]):
+        print("[FEHLER] Daten hinzufügen fehlgeschlagen: Ungültiger Token.")
+        return jsonify({'error': 'Autorisierung fehlgeschlagen.'}), 401
+
     data = request.json
     text = data.get('text')
     label = data.get('label')
@@ -247,8 +239,12 @@ def add_data():
     return jsonify({'message': 'Daten erfolgreich zur Trainingswarteschlange hinzugefügt!'})
 
 @app.route('/delete_data', methods=['POST'])
-@token_required
 def delete_data():
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not validate_token(auth_header.split(' ')[1]):
+        print("[FEHLER] Daten löschen fehlgeschlagen: Ungültiger Token.")
+        return jsonify({'error': 'Autorisierung fehlgeschlagen.'}), 401
+
     data = request.json
     text_to_delete = data.get('text')
 
@@ -266,8 +262,12 @@ def delete_data():
         return jsonify({'error': 'Text nicht gefunden.'}), 404
 
 @app.route('/retrain_model', methods=['POST'])
-@token_required
 def retrain_model():
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not validate_token(auth_header.split(' ')[1]):
+        print("[FEHLER] Retraining fehlgeschlagen: Ungültiger Token.")
+        return jsonify({'error': 'Autorisierung fehlgeschlagen.'}), 401
+
     try:
         train_and_save_model()
         return jsonify({'message': 'Modell wird im Hintergrund neu trainiert.'})
@@ -276,8 +276,11 @@ def retrain_model():
         return jsonify({'error': f'Ein Fehler beim Neu-Trainieren ist aufgetreten: {str(e)}'}), 500
 
 @app.route('/get_data_status', methods=['GET'])
-@token_required
 def get_data_status():
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not validate_token(auth_header.split(' ')[1]):
+        return jsonify({'error': 'Autorisierung fehlgeschlagen.'}), 401
+
     try:
         total_data = list(training_data_collection.find({}, {'_id': 0, 'text': 1, 'label': 1, 'trained': 1}))
 
@@ -292,16 +295,6 @@ def get_data_status():
     except Exception as e:
         print(f"[FEHLER] Fehler beim Abrufen des Datenstatus: {str(e)}")
         return jsonify({'error': f'Fehler beim Abrufen der Daten: {str(e)}'}), 500
-
-# NEUER ENDPUNKT FÜR STATISTIKEN
-@app.route('/get_stats', methods=['GET'])
-@token_required
-def get_stats():
-    """
-    Gibt detaillierte Statistiken über die Trainingsdaten zurück.
-    Erfordert Admin-Token.
-    """
-    return get_stats_data(training_data_collection)
 
 if __name__ == '__main__':
     app.run(debug=True)
