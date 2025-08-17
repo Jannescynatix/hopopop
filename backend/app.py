@@ -19,7 +19,7 @@ from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadTimeSignat
 from functools import wraps
 
 # NEU: Importiere die Funktion aus der neuen Datei
-from backend.stats_backend import get_stats_data
+from .stats_backend import get_stats_data
 
 # Flask-App initialisieren
 app = Flask(__name__)
