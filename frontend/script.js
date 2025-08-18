@@ -166,8 +166,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 const data = await response.json();
                 currentTrainingData = data.data;
-                renderTrainingData(); // renderTrainingData wird jetzt von updateTrainingDataStatus aufgerufen
-                updateStats(data.stats); // Neue Funktion
+                updateStats(data.stats); // Zuerst die Statistiken aktualisieren
+                renderTrainingData(); // Dann die Daten rendern
                 loginForm.classList.add('hidden');
                 trainingDataView.classList.remove('hidden');
                 return;
@@ -202,8 +202,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 adminToken = data.token;
                 localStorage.setItem('adminToken', adminToken);
                 currentTrainingData = data.data;
-                renderTrainingData();
                 updateStats(data.stats);
+                renderTrainingData();
                 loginForm.classList.add('hidden');
                 trainingDataView.classList.remove('hidden');
                 showToast('Login erfolgreich!', 'success');
@@ -340,7 +340,8 @@ document.addEventListener('DOMContentLoaded', () => {
         humanCountSpan.textContent = humanCount;
         kiCountSpan.textContent = kiCount;
         untrainiertCountSpan.textContent = untrainedCount;
-        totalWordsSpan.textContent = wordCounts.total;
+        // Die folgende Zeile wurde entfernt, da 'wordCounts' nicht definiert war:
+        // totalWordsSpan.textContent = wordCounts.total;
     }
 
     function updateStats(stats) {
@@ -425,8 +426,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             if (response.ok) {
                 currentTrainingData = data.data;
-                renderTrainingData();
                 updateStats(data.stats);
+                renderTrainingData();
             } else {
                 console.error("Fehler beim Abrufen der Daten:", data.error);
                 showToast(`Fehler beim Aktualisieren des Datenstatus: ${data.error}`, 'error');
