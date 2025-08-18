@@ -33,6 +33,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const untrainiertCountSpan = document.getElementById('untrainiert-count');
     const totalWordsSpan = document.getElementById('total-words');
     const retrainBtn = document.getElementById('retrain-btn');
+    const refreshStatsBtn = document.getElementById('refresh-stats-btn'); // Neuer Button
+
+    // Neue Statistik-Elemente
+    const humanWordCountSpan = document.getElementById('human-word-count');
+    const humanCharCountSpan = document.getElementById('human-char-count');
+    const kiWordCountSpan = document.getElementById('ki-word-count');
+    const kiCharCountSpan = document.getElementById('ki-char-count');
+    const totalWordCountSpan = document.getElementById('total-word-count');
+    const totalCharCountSpan = document.getElementById('total-char-count');
+    const avgHumanLengthSpan = document.getElementById('avg-human-length');
+    const avgKiLengthSpan = document.getElementById('avg-ki-length');
+    const frequentHumanWordsList = document.getElementById('frequent-human-words');
+    const frequentKiWordsList = document.getElementById('frequent-ki-words');
+    const frequentTotalWordsList = document.getElementById('frequent-total-words');
 
     // WICHTIG: Ersetzen Sie DIESE URL durch die URL Ihrer gehosteten Render-App
     const API_BASE_URL = 'https://b-kb9u.onrender.com';
@@ -109,7 +123,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ text: text })
             });
-
             const data = await response.json();
 
             if (response.ok) {
@@ -153,7 +166,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 const data = await response.json();
                 currentTrainingData = data.data;
-                renderTrainingData(data.word_counts);
+                renderTrainingData(); // renderTrainingData wird jetzt von updateTrainingDataStatus aufgerufen
+                updateStats(data.stats); // Neue Funktion
                 loginForm.classList.add('hidden');
                 trainingDataView.classList.remove('hidden');
                 return;
@@ -182,14 +196,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ password: password })
             });
-
             const data = await response.json();
 
             if (response.ok) {
                 adminToken = data.token;
                 localStorage.setItem('adminToken', adminToken);
                 currentTrainingData = data.data;
-                renderTrainingData(data.word_counts);
+                renderTrainingData();
+                updateStats(data.stats);
                 loginForm.classList.add('hidden');
                 trainingDataView.classList.remove('hidden');
                 showToast('Login erfolgreich!', 'success');
@@ -233,7 +247,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 body: JSON.stringify({ text, label })
             });
-
             const data = await response.json();
 
             if (response.ok) {
@@ -269,7 +282,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         showToast('Lösche Daten...', 'info');
-
         try {
             const response = await fetch(`${API_BASE_URL}/delete_data`, {
                 method: 'POST',
@@ -279,7 +291,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 body: JSON.stringify({ text })
             });
-
             const data = await response.json();
 
             if (response.ok) {
@@ -300,12 +311,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Funktion zum Rendern der Trainingsdaten-Liste
-    function renderTrainingData(wordCounts) {
+    function renderTrainingData() {
         dataList.innerHTML = '';
         let humanCount = 0;
         let kiCount = 0;
         let untrainedCount = 0;
-
         currentTrainingData.forEach((item, index) => {
             if (item.label === 'menschlich') humanCount++;
             else kiCount++;
@@ -330,9 +340,35 @@ document.addEventListener('DOMContentLoaded', () => {
         humanCountSpan.textContent = humanCount;
         kiCountSpan.textContent = kiCount;
         untrainiertCountSpan.textContent = untrainedCount;
-        if (wordCounts) {
-            totalWordsSpan.textContent = wordCounts.total;
-        }
+        totalWordsSpan.textContent = wordCounts.total;
+    }
+
+    function updateStats(stats) {
+        // Wort- und Zeichenanzahl
+        humanWordCountSpan.textContent = stats.word_counts.menschlich;
+        humanCharCountSpan.textContent = stats.char_counts.menschlich;
+        kiWordCountSpan.textContent = stats.word_counts.ki;
+        kiCharCountSpan.textContent = stats.char_counts.ki;
+        totalWordCountSpan.textContent = stats.word_counts.total;
+        totalCharCountSpan.textContent = stats.char_counts.total;
+
+        // Durchschnittliche Länge
+        avgHumanLengthSpan.textContent = stats.avg_lengths.menschlich.toFixed(2);
+        avgKiLengthSpan.textContent = stats.avg_lengths.ki.toFixed(2);
+
+        // Häufigste Wörter
+        updateFrequentWordsList(frequentHumanWordsList, stats.frequent_words.menschlich);
+        updateFrequentWordsList(frequentKiWordsList, stats.frequent_words.ki);
+        updateFrequentWordsList(frequentTotalWordsList, stats.frequent_words.total);
+    }
+
+    function updateFrequentWordsList(listElement, words) {
+        listElement.innerHTML = '';
+        words.forEach(item => {
+            const li = document.createElement('li');
+            li.textContent = `${item[0]} (${item[1]})`;
+            listElement.appendChild(li);
+        });
     }
 
     // Funktion zum Neu-Trainieren des Modells
@@ -355,7 +391,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Authorization': `Bearer ${adminToken}`
                 }
             });
-
             const data = await response.json();
 
             if (response.ok) {
@@ -377,6 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Neue Funktion: Aktualisiert alle Daten und Statistiken
     async function updateTrainingDataStatus() {
         if (!adminToken) {
             console.log("Nicht angemeldet, kann Datenstatus nicht aktualisieren.");
@@ -389,7 +425,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             if (response.ok) {
                 currentTrainingData = data.data;
-                renderTrainingData(data.word_counts);
+                renderTrainingData();
+                updateStats(data.stats);
             } else {
                 console.error("Fehler beim Abrufen der Daten:", data.error);
                 showToast(`Fehler beim Aktualisieren des Datenstatus: ${data.error}`, 'error');
@@ -404,6 +441,9 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast('Verbindungsproblem beim Abrufen des Datenstatus.', 'error');
         }
     }
+
+    // Event-Listener für den Aktualisieren-Button
+    refreshStatsBtn.addEventListener('click', updateTrainingDataStatus);
 
     // Initialen Check beim Laden der Seite
     if (document.getElementById('admin-panel').classList.contains('active')) {

@@ -1,0 +1,857 @@
+mein index html: <!DOCTYPE html>
+                 <html lang="de">
+                 <head>
+                     <meta charset="UTF-8">
+                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                     <meta name="description" content="Kostenloser KI-Text-Detektor, der Texte auf ihre Herkunft (Mensch oder KI) analysiert. Entwickelt mit modernsten Techniken des maschinellen Lernens.">
+                     <meta name="keywords" content="KI-Detektor, KI-Erkenner, AI Text Detector, Machine Learning, Textanalyse, Jannes Arda Cullmann">
+                     <title>KI-Text-Detektor</title>
+                     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+                     <link rel="stylesheet" href="style.css">
+                 </head>
+                 <body>
+                 <header>
+                     <nav>
+                         <div class="logo">KI-Detektor</div>
+                         <ul class="nav-menu">
+                             <li><a href="#" class="nav-link active" data-target="main-app">Analyse</a></li>
+                             <li><a href="#" class="nav-link" data-target="admin-panel">Admin-Panel</a></li>
+                             <li><a href="#" class="nav-link" data-target="about-us">Über uns</a></li>
+                             <li><a href="#" class="nav-link" data-target="legal-info">Rechtliches</a></li>
+                         </ul>
+                         <button class="burger-menu" id="burger-menu">
+                             <i class="fas fa-bars"></i>
+                         </button>
+                     </nav>
+                 </header>
+
+                 <main id="main-app" class="page-section active">
+                     <div class="container">
+                         <h1>KI-Text-Detektor</h1>
+                         <p>Geben Sie einen Text ein, um die Wahrscheinlichkeit zu erfahren, ob er von einem Menschen oder einer KI geschrieben wurde.</p>
+                         <textarea id="text-input" placeholder="Geben Sie hier Ihren Text ein..." required></textarea>
+                         <button id="analyze-btn"><i class="fas fa-search"></i> Analysieren</button>
+                         <div id="result-container" class="hidden">
+                             <p id="result-text"></p>
+                             <div class="progress-bar-container">
+                                 <div class="progress-bar mensch-bar"></div>
+                                 <div class="progress-bar ki-bar"></div>
+                             </div>
+                             <div class="probability-labels">
+                                 <span id="mensch-label"></span>
+                                 <span id="ki-label"></span>
+                             </div>
+                         </div>
+                     </div>
+                 </main>
+
+                 <section id="admin-panel" class="page-section hidden">
+                     <div class="container">
+                         <h2>Admin-Panel - Trainingsdaten</h2>
+
+                         <div id="login-form">
+                             <p>Admin-Passwort benötigt</p>
+                             <input type="password" id="admin-password-input" placeholder="Passwort" autocomplete="off">
+                             <button id="password-submit-btn"><i class="fas fa-sign-in-alt"></i> Login</button>
+                             <p id="login-error-msg" class="error-msg"></p>
+                         </div>
+
+                         <div id="training-data-view" class="hidden">
+                             <h3>Daten bearbeiten</h3>
+                             <div class="data-stats">
+                                 <div class="stat-box">
+                                     <i class="fas fa-user"></i>
+                                     <span id="human-count">0</span>
+                                     <p>Menschliche Texte</p>
+                                 </div>
+                                 <div class="stat-box">
+                                     <i class="fas fa-robot"></i>
+                                     <span id="ki-count">0</span>
+                                     <p>KI-Texte</p>
+                                 </div>
+                                 <div class="stat-box untrained-stat">
+                                     <i class="fas fa-hourglass-half"></i>
+                                     <span id="untrainiert-count">0</span>
+                                     <p>Warteschlange</p>
+                                 </div>
+                                 <div class="stat-box word-stat">
+                                     <i class="fas fa-font"></i>
+                                     <span id="total-words">0</span>
+                                     <p>Wörter insgesamt</p>
+                                 </div>
+                             </div>
+
+                             <div class="add-data-section">
+                                 <textarea id="new-text-input" placeholder="Neuen Text hinzufügen..."></textarea>
+                                 <div class="add-buttons">
+                                     <button id="add-human-btn"><i class="fas fa-user-plus"></i> Als Menschlich hinzufügen</button>
+                                     <button id="add-ki-btn"><i class="fas fa-robot"></i> Als KI hinzufügen</button>
+                                 </div>
+                                 <p id="save-status-msg" class="status-msg"></p>
+                             </div>
+
+                             <div class="training-control-section">
+                                 <h3>Modell-Training</h3>
+                                 <p>Klicken Sie hier, um das Modell mit allen neuen Daten neu zu trainieren.</p>
+                                 <button id="retrain-btn"><i class="fas fa-sync-alt"></i> Modell neu trainieren</button>
+                                 <p id="retrain-status-msg" class="status-msg"></p>
+                             </div>
+
+                             <ul id="data-list"></ul>
+                         </div>
+
+                     </div>
+                 </section>
+
+                 <section id="about-us" class="page-section hidden">
+                     <div class="container">
+                         <h2>Über Uns</h2>
+                         <p>Dies ist ein Projekt zur Entwicklung eines KI-Text-Detektors. [cite_start]Unser Ziel ist es, ein nützliches und transparentes Werkzeug zu schaffen, das auf maschinellem Lernen basiert.</p> [cite: 42]
+                         [cite_start]<p>Das System lernt, menschliche und KI-generierte Texte anhand von verschiedenen Merkmalen zu unterscheiden, darunter Wortwahl und Textstruktur (die sogenannte "Burstiness"). [cite: 42] [cite_start]Wir glauben daran, dass die Transparenz in der KI-Entwicklung entscheidend ist, weshalb dieses Projekt mit offenen Standards und einer klaren Logik entwickelt wurde.</p> [cite: 43]
+                     </div>
+                 </section>
+
+                 <section id="legal-info" class="page-section hidden">
+                     <div class="container">
+                         <h2>Rechtliche Hinweise & Nutzungsbedingungen</h2>
+                         <h3>Nutzung des Dienstes</h3>
+                         [cite_start]<p>Dieses Tool ist ein experimentelles und lehrreiches Projekt. [cite: 44] [cite_start]Es ist nicht dafür gedacht, Entscheidungen zu treffen, die das akademische oder berufliche Leben einer Person beeinflussen. [cite: 44]</p>
+                         [cite_start]<p>Die von diesem Tool generierten Ergebnisse dienen nur als Orientierung. [cite: 45] [cite_start]Sie können Fehler enthalten und sollten nicht als endgültige Beweise verwendet werden. [cite: 45]</p>
+                         <p>Durch die Nutzung dieses Dienstes erklären Sie sich damit einverstanden, dass Sie die Verantwortung für alle Entscheidungen tragen, die auf den erhaltenen Informationen basieren.</p>
+                         <h3>Daten & Datenschutz</h3>
+                         [cite_start]<p>Alle eingegebenen Texte werden ausschließlich zur Analyse verarbeitet. [cite: 46] [cite_start]Wir speichern keine persönlichen Daten. [cite: 46] [cite_start]Die im Admin-Panel hinzugefügten Trainingsdaten werden in einer privaten Datenbank gesichert und nur zur Verbesserung des Modells verwendet. [cite: 46]</p>
+                     </div>
+                 </section>
+
+                 <footer>
+                     <p>&copy; 2025 KI-Text-Detektor von Jannes Arda Cullmann. [cite_start]Alle Rechte vorbehalten. [cite: 47]</p>
+                     <p>Version: 1.0.0</p>
+                     <p>Dieses Tool ist nicht dafür geeignet, Entscheidungen zu fällen, die die Karriere (z. B. Schule, Studium, Ausbildung, etc....) oder die Noten einer Person beeinflussen.</p>
+                 </footer>
+                 <script src="tracker.js"></script>
+                 <script src="script.js"></script>
+                 </body>
+                 </html>  mein script.js: // frontend/script.js
+
+                                          document.addEventListener('DOMContentLoaded', () => {
+                                              // Navigations-Elemente
+                                              const navLinks = document.querySelectorAll('.nav-link');
+                                              const pages = document.querySelectorAll('.page-section');
+                                              const body = document.body;
+                                              const burgerMenu = document.getElementById('burger-menu');
+                                              const navMenu = document.querySelector('.nav-menu');
+
+                                              // App-Elemente
+                                              const analyzeBtn = document.getElementById('analyze-btn');
+                                              const textInput = document.getElementById('text-input');
+                                              const resultContainer = document.getElementById('result-container');
+                                              const resultText = document.getElementById('result-text');
+                                              const kiBar = document.querySelector('.ki-bar');
+                                              const menschBar = document.querySelector('.mensch-bar');
+                                              const kiLabel = document.getElementById('ki-label');
+                                              const menschLabel = document.getElementById('mensch-label');
+
+                                              // Admin-Panel-Elemente
+                                              const loginForm = document.getElementById('login-form');
+                                              const passwordInput = document.getElementById('admin-password-input');
+                                              const passwordSubmitBtn = document.getElementById('password-submit-btn');
+                                              const loginErrorMsg = document.getElementById('login-error-msg');
+                                              const trainingDataView = document.getElementById('training-data-view');
+                                              const newTextInput = document.getElementById('new-text-input');
+                                              const addHumanBtn = document.getElementById('add-human-btn');
+                                              const addKiBtn = document.getElementById('add-ki-btn');
+                                              const dataList = document.getElementById('data-list');
+                                              const humanCountSpan = document.getElementById('human-count');
+                                              const kiCountSpan = document.getElementById('ki-count');
+                                              const untrainiertCountSpan = document.getElementById('untrainiert-count');
+                                              const totalWordsSpan = document.getElementById('total-words');
+                                              const retrainBtn = document.getElementById('retrain-btn');
+
+                                              // WICHTIG: Ersetzen Sie DIESE URL durch die URL Ihrer gehosteten Render-App
+                                              const API_BASE_URL = 'https://b-kb9u.onrender.com';
+                                              let currentTrainingData = [];
+                                              let adminToken = localStorage.getItem('adminToken') || null;
+
+                                              // --- Allgemeine Hilfsfunktion für Toast-Nachrichten ---
+                                              function showToast(message, type = 'info', duration = 3000) {
+                                                  // Entferne alte Toasts, falls vorhanden
+                                                  const existingToast = document.querySelector('.toast-message');
+                                                  if (existingToast) existingToast.remove();
+
+                                                  const toast = document.createElement('div');
+                                                  toast.className = `toast-message toast-${type}`;
+                                                  toast.textContent = message;
+                                                  body.appendChild(toast);
+
+                                                  // Zeige den Toast an
+                                                  setTimeout(() => {
+                                                      toast.classList.add('show');
+                                                  }, 10);
+
+                                                  // Verstecke und entferne den Toast nach der Dauer
+                                                  setTimeout(() => {
+                                                      toast.classList.remove('show');
+                                                      setTimeout(() => {
+                                                          toast.remove();
+                                                      }, 300); // Warte auf Fade-out
+                                                  }, duration);
+                                              }
+
+                                              // --- Navigations-Logik ---
+                                              burgerMenu.addEventListener('click', () => {
+                                                  navMenu.classList.toggle('active');
+                                              });
+
+                                              navLinks.forEach(link => {
+                                                  link.addEventListener('click', (e) => {
+                                                      e.preventDefault();
+                                                      const targetId = e.target.dataset.target;
+
+                                                      // Schließe das Menü bei Klick (für mobile Ansicht)
+                                                      navMenu.classList.remove('active');
+
+                                                      pages.forEach(page => page.classList.remove('active'));
+                                                      document.getElementById(targetId).classList.add('active');
+
+                                                      navLinks.forEach(navLink => navLink.classList.remove('active'));
+                                                      link.classList.add('active');
+
+                                                      if (targetId === 'admin-panel') {
+                                                          checkAdminSession();
+                                                      }
+                                                  });
+                                              });
+
+                                              // --- Haupt-App-Logik ---
+                                              analyzeBtn.addEventListener('click', async () => {
+                                                  const text = textInput.value.trim();
+
+                                                  if (text.length === 0) {
+                                                      showToast('Bitte Text eingeben.', 'error');
+                                                      return;
+                                                  }
+
+                                                  resultContainer.classList.add('hidden');
+                                                  analyzeBtn.disabled = true;
+                                                  analyzeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analysiere...';
+
+                                                  try {
+                                                      showToast('Text wird analysiert...', 'info', 2000);
+                                                      const response = await fetch(`${API_BASE_URL}/predict`, {
+                                                          method: 'POST',
+                                                          headers: { 'Content-Type': 'application/json' },
+                                                          body: JSON.stringify({ text: text })
+                                                      });
+
+                                                      const data = await response.json();
+
+                                                      if (response.ok) {
+                                                          const kiProb = data.ki;
+                                                          const menschProb = data.menschlich;
+                                                          resultContainer.classList.remove('hidden');
+
+                                                          if (kiProb > menschProb) {
+                                                              resultText.textContent = `Dieser Text wurde wahrscheinlich von einer KI generiert.`;
+                                                              showToast('Die Analyse ist abgeschlossen.', 'warning');
+                                                          } else {
+                                                              resultText.textContent = `Dieser Text wurde wahrscheinlich von einem Menschen geschrieben.`;
+                                                              showToast('Die Analyse ist abgeschlossen.', 'success');
+                                                          }
+
+                                                          kiBar.style.width = `${kiProb}%`;
+                                                          menschBar.style.width = `${menschProb}%`;
+                                                          kiLabel.textContent = `KI: ${kiProb}%`;
+                                                          menschLabel.textContent = `Menschlich: ${menschProb}%`;
+                                                      } else {
+                                                          showToast(`Fehler bei der Analyse: ${data.error}`, 'error');
+                                                          resultText.textContent = `Fehler: ${data.error}`;
+                                                      }
+                                                  } catch (error) {
+                                                      console.error('Fehler bei der API-Anfrage:', error);
+                                                      showToast('Verbindungsproblem zur API.', 'error');
+                                                      resultText.textContent = 'Es gab ein Problem bei der Verbindung zur API.';
+                                                  } finally {
+                                                      analyzeBtn.disabled = false;
+                                                      analyzeBtn.innerHTML = '<i class="fas fa-search"></i> Analysieren';
+                                                  }
+                                              });
+
+                                              // --- Admin-Logik ---
+                                              async function checkAdminSession() {
+                                                  if (adminToken) {
+                                                      // Versuche, mit dem gespeicherten Token Daten abzurufen
+                                                      const response = await fetch(`${API_BASE_URL}/get_data_status`, {
+                                                          headers: { 'Authorization': `Bearer ${adminToken}` }
+                                                      });
+                                                      if (response.ok) {
+                                                          const data = await response.json();
+                                                          currentTrainingData = data.data;
+                                                          renderTrainingData(data.word_counts);
+                                                          loginForm.classList.add('hidden');
+                                                          trainingDataView.classList.remove('hidden');
+                                                          return;
+                                                      }
+                                                  }
+                                                  // Zeige Login-Formular, wenn kein Token oder ungültig
+                                                  loginForm.classList.remove('hidden');
+                                                  trainingDataView.classList.add('hidden');
+                                              }
+
+                                              passwordSubmitBtn.addEventListener('click', async () => {
+                                                  const password = passwordInput.value;
+                                                  if (!password) {
+                                                      showToast('Bitte Passwort eingeben.', 'error');
+                                                      loginErrorMsg.textContent = 'Bitte Passwort eingeben.';
+                                                      return;
+                                                  }
+
+                                                  passwordSubmitBtn.disabled = true;
+                                                  passwordSubmitBtn.textContent = 'Logge ein...';
+                                                  loginErrorMsg.textContent = '';
+
+                                                  try {
+                                                      const response = await fetch(`${API_BASE_URL}/admin_login`, {
+                                                          method: 'POST',
+                                                          headers: { 'Content-Type': 'application/json' },
+                                                          body: JSON.stringify({ password: password })
+                                                      });
+
+                                                      const data = await response.json();
+
+                                                      if (response.ok) {
+                                                          adminToken = data.token;
+                                                          localStorage.setItem('adminToken', adminToken);
+                                                          currentTrainingData = data.data;
+                                                          renderTrainingData(data.word_counts);
+                                                          loginForm.classList.add('hidden');
+                                                          trainingDataView.classList.remove('hidden');
+                                                          showToast('Login erfolgreich!', 'success');
+                                                      } else {
+                                                          loginErrorMsg.textContent = data.error || 'Login fehlgeschlagen.';
+                                                          showToast(`Login fehlgeschlagen: ${data.error}`, 'error');
+                                                      }
+                                                  } catch (error) {
+                                                      loginErrorMsg.textContent = 'Verbindungsfehler zur API.';
+                                                      console.error(error);
+                                                      showToast('Verbindungsproblem zur API.', 'error');
+                                                  } finally {
+                                                      passwordSubmitBtn.disabled = false;
+                                                      passwordSubmitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
+                                                  }
+                                              });
+
+                                              // Funktion zum Hinzufügen von Texten
+                                              async function addTextToList(label) {
+                                                  const text = newTextInput.value.trim();
+                                                  if (!text) {
+                                                      showToast('Bitte Text eingeben.', 'error');
+                                                      return;
+                                                  }
+                                                  if (!adminToken) {
+                                                      showToast('Fehler: Nicht angemeldet.', 'error');
+                                                      checkAdminSession();
+                                                      return;
+                                                  }
+
+                                                  showToast('Füge Daten hinzu...', 'info');
+                                                  addHumanBtn.disabled = true;
+                                                  addKiBtn.disabled = true;
+
+                                                  try {
+                                                      const response = await fetch(`${API_BASE_URL}/add_data`, {
+                                                          method: 'POST',
+                                                          headers: {
+                                                              'Content-Type': 'application/json',
+                                                              'Authorization': `Bearer ${adminToken}`
+                                                          },
+                                                          body: JSON.stringify({ text, label })
+                                                      });
+
+                                                      const data = await response.json();
+
+                                                      if (response.ok) {
+                                                          currentTrainingData.push({ text, label, trained: false });
+                                                          newTextInput.value = '';
+                                                          await updateTrainingDataStatus();
+                                                          showToast('✅ Daten erfolgreich zur Warteschlange hinzugefügt!', 'success');
+                                                      } else {
+                                                          showToast(`❌ Fehler: ${data.error}`, 'error');
+                                                          if (response.status === 401) {
+                                                              adminToken = null;
+                                                              localStorage.removeItem('adminToken');
+                                                              checkAdminSession();
+                                                          }
+                                                      }
+                                                  } catch (error) {
+                                                      showToast('❌ Verbindungsproblem beim Hinzufügen.', 'error');
+                                                  } finally {
+                                                      addHumanBtn.disabled = false;
+                                                      addKiBtn.disabled = false;
+                                                  }
+                                              }
+
+                                              addHumanBtn.addEventListener('click', () => addTextToList('menschlich'));
+                                              addKiBtn.addEventListener('click', () => addTextToList('ki'));
+
+                                              // Funktion zum Löschen eines Texts
+                                              async function deleteText(text, index) {
+                                                  if (!adminToken) {
+                                                      showToast('Fehler: Nicht angemeldet.', 'error');
+                                                      checkAdminSession();
+                                                      return;
+                                                  }
+
+                                                  showToast('Lösche Daten...', 'info');
+
+                                                  try {
+                                                      const response = await fetch(`${API_BASE_URL}/delete_data`, {
+                                                          method: 'POST',
+                                                          headers: {
+                                                              'Content-Type': 'application/json',
+                                                              'Authorization': `Bearer ${adminToken}`
+                                                          },
+                                                          body: JSON.stringify({ text })
+                                                      });
+
+                                                      const data = await response.json();
+
+                                                      if (response.ok) {
+                                                          currentTrainingData.splice(index, 1);
+                                                          await updateTrainingDataStatus();
+                                                          showToast('✅ Daten erfolgreich gelöscht!', 'success');
+                                                      } else {
+                                                          showToast(`❌ Fehler: ${data.error}`, 'error');
+                                                          if (response.status === 401) {
+                                                              adminToken = null;
+                                                              localStorage.removeItem('adminToken');
+                                                              checkAdminSession();
+                                                          }
+                                                      }
+                                                  } catch (error) {
+                                                      showToast('❌ Verbindungsproblem beim Löschen.', 'error');
+                                                  }
+                                              }
+
+                                              // Funktion zum Rendern der Trainingsdaten-Liste
+                                              function renderTrainingData(wordCounts) {
+                                                  dataList.innerHTML = '';
+                                                  let humanCount = 0;
+                                                  let kiCount = 0;
+                                                  let untrainedCount = 0;
+
+                                                  currentTrainingData.forEach((item, index) => {
+                                                      if (item.label === 'menschlich') humanCount++;
+                                                      else kiCount++;
+                                                      if (!item.trained) untrainedCount++;
+
+                                                      const li = document.createElement('li');
+                                                      li.innerHTML = `
+                                                          <span class="data-text ${item.trained ? '' : 'untrained-text'}">${item.text}</span>
+                                                          <span class="data-actions">
+                                                              <span class="label ${item.label === 'ki' ? 'ki-label' : 'human-label'}">
+                                                                  ${item.label.toUpperCase()}
+                                                              </span>
+                                                              <button class="delete-btn" data-text="${item.text}"><i class="fas fa-trash-alt"></i></button>
+                                                          </span>
+                                                      `;
+                                                      dataList.appendChild(li);
+
+                                                      const deleteBtn = li.querySelector('.delete-btn');
+                                                      deleteBtn.addEventListener('click', () => deleteText(item.text, index));
+                                                  });
+
+                                                  humanCountSpan.textContent = humanCount;
+                                                  kiCountSpan.textContent = kiCount;
+                                                  untrainiertCountSpan.textContent = untrainedCount;
+                                                  if (wordCounts) {
+                                                      totalWordsSpan.textContent = wordCounts.total;
+                                                  }
+                                              }
+
+                                              // Funktion zum Neu-Trainieren des Modells
+                                              retrainBtn.addEventListener('click', async () => {
+                                                  if (!adminToken) {
+                                                      showToast('Fehler: Nicht angemeldet.', 'error');
+                                                      checkAdminSession();
+                                                      return;
+                                                  }
+
+                                                  showToast('Modell-Training gestartet...', 'info');
+                                                  retrainBtn.disabled = true;
+                                                  retrainBtn.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Trainiere...';
+
+                                                  try {
+                                                      const response = await fetch(`${API_BASE_URL}/retrain_model`, {
+                                                          method: 'POST',
+                                                          headers: {
+                                                              'Content-Type': 'application/json',
+                                                              'Authorization': `Bearer ${adminToken}`
+                                                          }
+                                                      });
+
+                                                      const data = await response.json();
+
+                                                      if (response.ok) {
+                                                          showToast('✅ Modell-Training gestartet. Schau in die Logs für Details!', 'success', 5000);
+                                                          setTimeout(updateTrainingDataStatus, 3000); // Warte 3s, bis DB-Update
+                                                      } else {
+                                                          showToast(`❌ Fehler: ${data.error}`, 'error');
+                                                          if (response.status === 401) {
+                                                              adminToken = null;
+                                                              localStorage.removeItem('adminToken');
+                                                              checkAdminSession();
+                                                          }
+                                                      }
+                                                  } catch (error) {
+                                                      showToast('❌ Verbindungsproblem beim Training.', 'error');
+                                                  } finally {
+                                                      retrainBtn.disabled = false;
+                                                      retrainBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Modell neu trainieren';
+                                                  }
+                                              });
+
+                                              async function updateTrainingDataStatus() {
+                                                  if (!adminToken) {
+                                                      console.log("Nicht angemeldet, kann Datenstatus nicht aktualisieren.");
+                                                      return;
+                                                  }
+                                                  try {
+                                                      const response = await fetch(`${API_BASE_URL}/get_data_status`, {
+                                                          headers: { 'Authorization': `Bearer ${adminToken}` }
+                                                      });
+                                                      const data = await response.json();
+                                                      if (response.ok) {
+                                                          currentTrainingData = data.data;
+                                                          renderTrainingData(data.word_counts);
+                                                      } else {
+                                                          console.error("Fehler beim Abrufen der Daten:", data.error);
+                                                          showToast(`Fehler beim Aktualisieren des Datenstatus: ${data.error}`, 'error');
+                                                          if (response.status === 401) {
+                                                              adminToken = null;
+                                                              localStorage.removeItem('adminToken');
+                                                              checkAdminSession();
+                                                          }
+                                                      }
+                                                  } catch (error) {
+                                                      console.error("Fehler beim Abrufen der Daten:", error);
+                                                      showToast('Verbindungsproblem beim Abrufen des Datenstatus.', 'error');
+                                                  }
+                                              }
+
+                                              // Initialen Check beim Laden der Seite
+                                              if (document.getElementById('admin-panel').classList.contains('active')) {
+                                                  checkAdminSession();
+                                              }
+                                          });  mein app.py:  # backend/app.py
+                                                             from flask import Flask, request, jsonify
+                                                             from flask_cors import CORS
+                                                             import joblib
+                                                             import pandas as pd
+                                                             from pymongo import MongoClient
+                                                             import re
+                                                             from sklearn.feature_extraction.text import TfidfVectorizer
+                                                             from sklearn.pipeline import Pipeline
+                                                             from sklearn.naive_bayes import MultinomialNB
+                                                             from sklearn.base import BaseEstimator, TransformerMixin
+                                                             from sklearn.compose import ColumnTransformer
+                                                             import numpy as np
+                                                             import nltk
+                                                             from nltk.tokenize import sent_tokenize
+                                                             import os
+                                                             import bcrypt
+                                                             from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadTimeSignature
+
+                                                             # Flask-App initialisieren
+                                                             app = Flask(__name__)
+                                                             CORS(app)
+
+                                                             # --- NLTK-Daten herunterladen und überprüfen ---
+                                                             def download_nltk_data():
+                                                                 """Lädt die NLTK-Daten herunter, falls sie nicht vorhanden sind."""
+                                                                 required_resources = ['punkt', 'punkt_tab']
+                                                                 for resource in required_resources:
+                                                                     try:
+                                                                         nltk.data.find(f'tokenizers/{resource}')
+                                                                         print(f"[LOG] NLTK-Daten '{resource}' bereits vorhanden.")
+                                                                     except LookupError:
+                                                                         print(f"[LOG] NLTK-Daten '{resource}' nicht gefunden. Starte Download...")
+                                                                         try:
+                                                                             nltk.download(resource, quiet=True)
+                                                                             print(f"[LOG] NLTK-Daten '{resource}' erfolgreich heruntergeladen.")
+                                                                         except Exception:
+                                                                             print(f"[LOG] Globaler NLTK-Download für '{resource}' fehlgeschlagen. Versuche, in das Projektverzeichnis herunterzuladen.")
+                                                                             nltk.download(resource, quiet=True, download_dir='.')
+                                                                             print(f"[LOG] NLTK-Daten '{resource}' in das Projektverzeichnis heruntergeladen.")
+                                                                 os.environ['NLTK_DATA'] = os.getcwd()
+
+                                                             download_nltk_data()
+
+                                                             # Sicheres Passwort-Handling
+                                                             # Passwort-Hash aus Umgebungsvariable laden
+                                                             ADMIN_PASSWORD_HASH = os.environ.get('ADMIN_PASSWORD_HASH')
+                                                             if not ADMIN_PASSWORD_HASH:
+                                                                 print("[WARNUNG] Umgebungsvariable ADMIN_PASSWORD_HASH ist nicht gesetzt. Admin-Login wird fehlschlagen.")
+                                                                 # Für lokale Entwicklung kann ein Platzhalter verwendet werden, aber nicht für die Produktion!
+                                                                 ADMIN_PASSWORD_HASH = '$2b$12$D23j9nZt2c9s5e7g8h3j2u9j2u9j2u9j2u9j2u9j2u9j2u9j2u9j'
+
+                                                             # Token-Serializer für sichere Sessions
+                                                             # Der geheime Schlüssel sollte ebenfalls eine Umgebungsvariable sein
+                                                             SECRET_KEY = os.environ.get('SECRET_KEY', '518f95dd8db2a3c4a4f0b6c2ee4a7ca71db24afd7264a9b6bdf9484c067d7792')
+                                                             s = URLSafeTimedSerializer(SECRET_KEY)
+
+                                                             # Globale Variablen für das Modell und den Vektorizer
+                                                             model = None
+
+                                                             # MongoDB-Verbindung
+                                                             MONGO_URI = 'mongodb+srv://wwll:k2AOWvBKW5H5oeZO@py.9gqajwk.mongodb.net/?retryWrites=true&w=majority&appName=py'
+                                                             client = MongoClient(MONGO_URI)
+                                                             db = client.ai_text_detector_db
+                                                             training_data_collection = db.training_data
+
+                                                             # --- Feature Engineering: Benutzerdefinierte Transformer ---
+                                                             class TextFeaturesExtractor(BaseEstimator, TransformerMixin):
+                                                                 """Extrahiert numerische Features aus Texten (z.B. Wortanzahl, Satzanzahl, Burstiness)."""
+                                                                 def fit(self, X, y=None):
+                                                                     return self
+
+                                                                 def transform(self, X, y=None):
+                                                                     if isinstance(X, pd.DataFrame):
+                                                                         X = X['text']
+
+                                                                     num_sentences = X.apply(lambda text: len(sent_tokenize(text)))
+                                                                     num_words = X.apply(lambda text: len(text.split()))
+                                                                     avg_word_length = X.apply(lambda text: sum(len(word) for word in text.split()) / len(text.split()) if len(text.split()) > 0 else 0)
+                                                                     burstiness = X.apply(lambda text: np.std([len(sentence.split()) for sentence in sent_tokenize(text)]) if len(sent_tokenize(text)) > 1 else 0)
+
+                                                                     return pd.DataFrame({
+                                                                         'num_sentences': num_sentences,
+                                                                         'num_words': num_words,
+                                                                         'avg_word_length': avg_word_length,
+                                                                         'burstiness': burstiness
+                                                                     })
+
+                                                             # --- Daten- und Modell-Logik ---
+                                                             def seed_database():
+                                                                 """Befüllt die Datenbank nur, wenn sie leer ist."""
+                                                                 print("[LOG] Überprüfe Datenbank...")
+                                                                 if training_data_collection.count_documents({}) == 0:
+                                                                     print("[LOG] Datenbank ist leer. Befülle sie mit Initialdaten...")
+                                                                     initial_human_texts = ['Als ich gestern Abend durch den Wald spazierte, hörte ich plötzlich ein lautes Knacken hinter mir. Ich drehte mich um, sah aber nichts. Trotzdem beschleunigte ich meine Schritte, denn die Geräusche folgten mir.',
+                                                                                            'Meine Großmutter hat mir ein altes Familienrezept für Apfelkuchen gegeben. Es ist handgeschrieben auf einem zerknitterten Zettel, der Flecken von Zucker und Mehl hat.',
+                                                                                            'Der letzte Roman von Haruki Murakami, den ich gelesen habe, war eine absolute Meisterleistung. Die Charaktere sind so tiefgründig und die Handlung ist surreal und doch so emotional.',
+                                                                                            'Nein ich denke nicht Pascal.','Ich vermute, dass die Wurzel drei ist','Du bist dumm',
+                                                                                            'Heute ist das Wetter wirklich schön, die Sonne scheint und es ist warm. Ich werde den Nachmittag im Park verbringen und ein Buch lesen.',
+                                                                                            'Der Verkehr in der Stadt war heute eine Katastrophe. Ich habe fast eine Stunde gebraucht, um zur Arbeit zu kommen.',
+                                                                                            'Mein Lieblingsessen ist Pizza mit extra Käse. Ich könnte sie jeden Tag essen, ohne dass sie mir über wird.',
+                                                                                            'Das Konzert gestern war unglaublich! Die Band hat eine so tolle Energie auf die Bühne gebracht.',]
+                                                                     initial_ki_texts = ['Das grundlegende Prinzip der Quantenverschränkung beruht auf der nicht-lokalen Korrelation von Quantenzuständen.',
+                                                                                         'Die Analyse der globalen Wirtschaftsindikatoren zeigt eine deutliche Verschiebung in Richtung digitaler Dienstleistungen.',
+                                                                                         'Ein rekurrierendes neuronales Netzwerk (RNN) ist eine Klasse von künstlichen neuronalen Netzen, die sich durch die Fähigkeit auszeichnen, sequenzielle Daten wie Texte oder Zeitreihen zu verarbeiten.',
+                                                                                         'Das wahrscheinlichste Problem ist, dass dein Modell oder der Vektorizer immer nur ein und dasselbe Ergebnis vorhersagen.',
+                                                                                         'Ja, die Logs zeigen, dass Anfragen an dein Backend gehen, aber etwas stimmt mit der Antwort nicht.',
+                                                                                         'Diese Frage kann ich nicht beantworten.',
+                                                                                         'Die Entwicklung nachhaltiger Energiesysteme erfordert die Integration erneuerbarer Quellen und eine effiziente Speicherung der erzeugten Energie.',
+                                                                                         'In der modernen Linguistik wird der Begriff "Diskursanalyse" zur Untersuchung der sprachlichen Interaktion in ihrem sozialen Kontext verwendet.',
+                                                                                         'Die Bedeutung des Internets der Dinge (IoT) wächst exponentiell, da immer mehr Geräte vernetzt werden und Daten austauschen.',
+                                                                                         'Maschinelles Lernen bietet vielversprechende Ansätze zur Optimierung logistischer Prozesse und zur Vorhersage von Markttrends.']
+
+                                                                     data_to_insert = [{'text': text, 'label': 'menschlich', 'trained': True} for text in initial_human_texts]
+                                                                     data_to_insert.extend([{'text': text, 'label': 'ki', 'trained': True} for text in initial_ki_texts])
+                                                                     training_data_collection.insert_many(data_to_insert)
+                                                                     print("[LOG] Datenbank erfolgreich befüllt.")
+                                                                 else:
+                                                                     print("[LOG] Datenbank enthält bereits Daten. Überspringe Befüllung.")
+
+                                                             def train_and_save_model():
+                                                                 """Lädt die Daten aus der DB und trainiert das Modell neu."""
+                                                                 global model
+                                                                 print("[LOG] Starte Modell-Training...")
+                                                                 try:
+                                                                     training_data_list = list(training_data_collection.find({'trained': True}, {'_id': 0}))
+                                                                     if not training_data_list:
+                                                                         print("[LOG] Keine trainierbaren Daten in der Datenbank gefunden.")
+                                                                         model = None
+                                                                         return
+
+                                                                     df = pd.DataFrame(training_data_list)
+                                                                     print(f"[LOG] {len(df)} Datensätze für das Training geladen.")
+
+                                                                     preprocessor = ColumnTransformer(
+                                                                         transformers=[
+                                                                             ('text_tfidf', TfidfVectorizer(ngram_range=(1, 3), max_features=1000), 'text'),
+                                                                             ('text_features', TextFeaturesExtractor(), 'text')
+                                                                         ],
+                                                                         remainder='passthrough'
+                                                                     )
+
+                                                                     model = Pipeline(steps=[
+                                                                         ('preprocessor', preprocessor),
+                                                                         ('classifier', MultinomialNB())
+                                                                     ])
+
+                                                                     X = df[['text']]
+                                                                     y = df['label']
+                                                                     model.fit(X, y)
+                                                                     joblib.dump(model, 'model_pipeline.pkl')
+                                                                     print("[LOG] Modell-Pipeline wurde erfolgreich neu trainiert und gespeichert.")
+
+                                                                     training_data_collection.update_many({'trained': False}, {'$set': {'trained': True}})
+                                                                     print("[LOG] Alle neuen Daten als 'trained' markiert.")
+                                                                     print("[STATUS] TRAINING ABGESCHLOSSEN.")
+
+                                                                 except Exception as e:
+                                                                     print(f"[FEHLER] Fehler beim Neu-Trainieren des Modells: {str(e)}")
+
+                                                             # Beim Start des Servers initial trainieren
+                                                             seed_database()
+                                                             train_and_save_model()
+
+                                                             # --- Middleware zur Token-Validierung ---
+                                                             def validate_token(token):
+                                                                 try:
+                                                                     data = s.loads(token, max_age=3600)  # Token ist 1 Stunde gültig
+                                                                     if data.get('authenticated'):
+                                                                         return True
+                                                                 except (SignatureExpired, BadTimeSignature):
+                                                                     return False
+                                                                 return False
+
+                                                             # --- API Endpunkte ---
+                                                             @app.route('/predict', methods=['POST'])
+                                                             def predict():
+                                                                 global model
+                                                                 data = request.json
+                                                                 text = data.get('text', '')
+
+                                                                 if not text:
+                                                                     return jsonify({'error': 'Kein Text bereitgestellt.'}), 400
+
+                                                                 if model is None:
+                                                                     print("[FEHLER] Vorhersage fehlgeschlagen: Modell ist nicht geladen oder trainiert.")
+                                                                     return jsonify({'error': 'Das Modell ist noch nicht geladen oder trainiert.'}), 500
+
+                                                                 try:
+                                                                     text_df = pd.DataFrame([{'text': text}])
+                                                                     probabilities = model.predict_proba(text_df)[0]
+                                                                     classes = model.classes_
+
+                                                                     mensch_prob = float(probabilities[classes == 'menschlich'])
+                                                                     ki_prob = float(probabilities[classes == 'ki'])
+
+                                                                     print(f"[LOG] Vorhersage für Text: '{text[:30]}...'. Ergebnis: Menschlich: {round(mensch_prob * 100, 2)}%, KI: {round(ki_prob * 100, 2)}%")
+
+                                                                     return jsonify({
+                                                                         'menschlich': round(mensch_prob * 100, 2),
+                                                                         'ki': round(ki_prob * 100, 2)
+                                                                     })
+
+                                                                 except Exception as e:
+                                                                     print(f"[FEHLER] Vorhersage konnte nicht durchgeführt werden: {str(e)}")
+                                                                     return jsonify({'error': 'Ein Fehler bei der Vorhersage ist aufgetreten.'}), 500
+
+                                                             @app.route('/admin_login', methods=['POST'])
+                                                             def admin_login():
+                                                                 data = request.json
+                                                                 password = data.get('password').encode('utf-8')
+
+                                                                 if ADMIN_PASSWORD_HASH and bcrypt.checkpw(password, ADMIN_PASSWORD_HASH.encode('utf-8')):
+                                                                     print("[LOG] Admin-Login erfolgreich.")
+                                                                     training_data_list = list(training_data_collection.find({}, {'_id': 0}))
+                                                                     token = s.dumps({'authenticated': True})
+                                                                     return jsonify({'message': 'Login erfolgreich', 'data': training_data_list, 'token': token})
+                                                                 else:
+                                                                     print("[FEHLER] Admin-Login fehlgeschlagen: Falsches Passwort.")
+                                                                     return jsonify({'error': 'Falsches Passwort.'}), 401
+
+                                                             @app.route('/add_data', methods=['POST'])
+                                                             def add_data():
+                                                                 auth_header = request.headers.get('Authorization')
+                                                                 if not auth_header or not validate_token(auth_header.split(' ')[1]):
+                                                                     print("[FEHLER] Daten hinzufügen fehlgeschlagen: Ungültiger Token.")
+                                                                     return jsonify({'error': 'Autorisierung fehlgeschlagen.'}), 401
+
+                                                                 data = request.json
+                                                                 text = data.get('text')
+                                                                 label = data.get('label')
+
+                                                                 if not text or not label:
+                                                                     print("[FEHLER] Daten hinzufügen fehlgeschlagen: Text und Label fehlen.")
+                                                                     return jsonify({'error': 'Text und Label sind erforderlich.'}), 400
+
+                                                                 training_data_collection.insert_one({'text': text, 'label': label, 'trained': False})
+                                                                 print(f"[LOG] Neuer Datensatz ({label}) zur Warteschlange hinzugefügt: '{text[:30]}...'")
+                                                                 return jsonify({'message': 'Daten erfolgreich zur Trainingswarteschlange hinzugefügt!'})
+
+                                                             @app.route('/delete_data', methods=['POST'])
+                                                             def delete_data():
+                                                                 auth_header = request.headers.get('Authorization')
+                                                                 if not auth_header or not validate_token(auth_header.split(' ')[1]):
+                                                                     print("[FEHLER] Daten löschen fehlgeschlagen: Ungültiger Token.")
+                                                                     return jsonify({'error': 'Autorisierung fehlgeschlagen.'}), 401
+
+                                                                 data = request.json
+                                                                 text_to_delete = data.get('text')
+
+                                                                 if not text_to_delete:
+                                                                     print("[FEHLER] Daten löschen fehlgeschlagen: Text zum Löschen fehlt.")
+                                                                     return jsonify({'error': 'Text zum Löschen ist erforderlich.'}), 400
+
+                                                                 result = training_data_collection.delete_one({'text': text_to_delete})
+
+                                                                 if result.deleted_count > 0:
+                                                                     print(f"[LOG] Datensatz erfolgreich gelöscht: '{text_to_delete[:30]}...'")
+                                                                     return jsonify({'message': 'Daten erfolgreich gelöscht.'})
+                                                                 else:
+                                                                     print("[FEHLER] Daten löschen fehlgeschlagen: Text nicht in der DB gefunden.")
+                                                                     return jsonify({'error': 'Text nicht gefunden.'}), 404
+
+                                                             @app.route('/retrain_model', methods=['POST'])
+                                                             def retrain_model():
+                                                                 auth_header = request.headers.get('Authorization')
+                                                                 if not auth_header or not validate_token(auth_header.split(' ')[1]):
+                                                                     print("[FEHLER] Retraining fehlgeschlagen: Ungültiger Token.")
+                                                                     return jsonify({'error': 'Autorisierung fehlgeschlagen.'}), 401
+
+                                                                 try:
+                                                                     train_and_save_model()
+                                                                     return jsonify({'message': 'Modell wird im Hintergrund neu trainiert.'})
+                                                                 except Exception as e:
+                                                                     print(f"[FEHLER] Fehler bei der API-Anfrage zum Neu-Trainieren: {str(e)}")
+                                                                     return jsonify({'error': f'Ein Fehler beim Neu-Trainieren ist aufgetreten: {str(e)}'}), 500
+
+                                                             @app.route('/get_data_status', methods=['GET'])
+                                                             def get_data_status():
+                                                                 auth_header = request.headers.get('Authorization')
+                                                                 if not auth_header or not validate_token(auth_header.split(' ')[1]):
+                                                                     return jsonify({'error': 'Autorisierung fehlgeschlagen.'}), 401
+
+                                                                 try:
+                                                                     total_data = list(training_data_collection.find({}, {'_id': 0, 'text': 1, 'label': 1, 'trained': 1}))
+
+                                                                     word_counts = {
+                                                                         'menschlich': sum(len(d['text'].split()) for d in total_data if d['label'] == 'menschlich'),
+                                                                         'ki': sum(len(d['text'].split()) for d in total_data if d['label'] == 'ki')
+                                                                     }
+                                                                     word_counts['total'] = word_counts['menschlich'] + word_counts['ki']
+
+                                                                     print("[LOG] Datenstatus erfolgreich abgerufen.")
+                                                                     return jsonify({'data': total_data, 'word_counts': word_counts})
+                                                                 except Exception as e:
+                                                                     print(f"[FEHLER] Fehler beim Abrufen des Datenstatus: {str(e)}")
+                                                                     return jsonify({'error': f'Fehler beim Abrufen der Daten: {str(e)}'}), 500
+
+                                                             if __name__ == '__main__':
+                                                                 app.run(debug=True)  meine requirements.txt: Flask
+                                                                                                              flask-cors
+                                                                                                              scikit-learn==1.6.1
+                                                                                                              joblib
+                                                                                                              gunicorn
+                                                                                                              pandas
+                                                                                                              pymongo
+                                                                                                              nltk
+                                                                                                              numpy
+                                                                                                              bcrypt
+                                                                                                              itsdangerous
+                                                                                                              python-dotenv
+                                                                                                              textstat
+

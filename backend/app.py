@@ -13,6 +13,7 @@ from sklearn.compose import ColumnTransformer
 import numpy as np
 import nltk
 from nltk.tokenize import sent_tokenize
+from collections import Counter
 import os
 import bcrypt
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadTimeSignature
@@ -38,7 +39,7 @@ def download_nltk_data():
                 print(f"[LOG] Globaler NLTK-Download für '{resource}' fehlgeschlagen. Versuche, in das Projektverzeichnis herunterzuladen.")
                 nltk.download(resource, quiet=True, download_dir='.')
                 print(f"[LOG] NLTK-Daten '{resource}' in das Projektverzeichnis heruntergeladen.")
-    os.environ['NLTK_DATA'] = os.getcwd()
+                os.environ['NLTK_DATA'] = os.getcwd()
 
 download_nltk_data()
 
@@ -172,6 +173,53 @@ def validate_token(token):
         return False
     return False
 
+# Funktion zur Berechnung der Statistiken
+def calculate_stats(data):
+    stats = {
+        'word_counts': {'menschlich': 0, 'ki': 0, 'total': 0},
+        'char_counts': {'menschlich': 0, 'ki': 0, 'total': 0},
+        'avg_lengths': {'menschlich': 0, 'ki': 0},
+        'frequent_words': {'menschlich': [], 'ki': [], 'total': []}
+    }
+
+    human_texts = [d['text'] for d in data if d['label'] == 'menschlich']
+    ki_texts = [d['text'] for d in data if d['label'] == 'ki']
+    all_texts = human_texts + ki_texts
+
+    # Berechnung der Zählungen
+    for text in human_texts:
+        words = text.split()
+        stats['word_counts']['menschlich'] += len(words)
+        stats['char_counts']['menschlich'] += len(text)
+
+    for text in ki_texts:
+        words = text.split()
+        stats['word_counts']['ki'] += len(words)
+        stats['char_counts']['ki'] += len(text)
+
+    stats['word_counts']['total'] = stats['word_counts']['menschlich'] + stats['word_counts']['ki']
+    stats['char_counts']['total'] = stats['char_counts']['menschlich'] + stats['char_counts']['ki']
+
+    # Berechnung der durchschnittlichen Länge
+    if len(human_texts) > 0:
+        stats['avg_lengths']['menschlich'] = stats['char_counts']['menschlich'] / len(human_texts)
+    if len(ki_texts) > 0:
+        stats['avg_lengths']['ki'] = stats['char_counts']['ki'] / len(ki_texts)
+
+    # Berechnung der häufigsten Wörter
+    def get_frequent_words(text_list, num=15):
+        all_words = ' '.join(text_list).lower()
+        # Entferne Satzzeichen
+        all_words = re.sub(r'[^\w\s]', '', all_words)
+        words = all_words.split()
+        return Counter(words).most_common(num)
+
+    stats['frequent_words']['menschlich'] = get_frequent_words(human_texts)
+    stats['frequent_words']['ki'] = get_frequent_words(ki_texts)
+    stats['frequent_words']['total'] = get_frequent_words(all_texts)
+
+    return stats
+
 # --- API Endpunkte ---
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -214,7 +262,8 @@ def admin_login():
         print("[LOG] Admin-Login erfolgreich.")
         training_data_list = list(training_data_collection.find({}, {'_id': 0}))
         token = s.dumps({'authenticated': True})
-        return jsonify({'message': 'Login erfolgreich', 'data': training_data_list, 'token': token})
+        stats = calculate_stats(training_data_list)
+        return jsonify({'message': 'Login erfolgreich', 'data': training_data_list, 'token': token, 'stats': stats})
     else:
         print("[FEHLER] Admin-Login fehlgeschlagen: Falsches Passwort.")
         return jsonify({'error': 'Falsches Passwort.'}), 401
@@ -283,15 +332,9 @@ def get_data_status():
 
     try:
         total_data = list(training_data_collection.find({}, {'_id': 0, 'text': 1, 'label': 1, 'trained': 1}))
-
-        word_counts = {
-            'menschlich': sum(len(d['text'].split()) for d in total_data if d['label'] == 'menschlich'),
-            'ki': sum(len(d['text'].split()) for d in total_data if d['label'] == 'ki')
-        }
-        word_counts['total'] = word_counts['menschlich'] + word_counts['ki']
-
+        stats = calculate_stats(total_data)
         print("[LOG] Datenstatus erfolgreich abgerufen.")
-        return jsonify({'data': total_data, 'word_counts': word_counts})
+        return jsonify({'data': total_data, 'stats': stats})
     except Exception as e:
         print(f"[FEHLER] Fehler beim Abrufen des Datenstatus: {str(e)}")
         return jsonify({'error': f'Fehler beim Abrufen der Daten: {str(e)}'}), 500
