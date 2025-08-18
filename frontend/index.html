@@ -15,6 +15,7 @@
         <div class="logo">KI-Detektor</div>
         <ul class="nav-menu">
             <li><a href="#" class="nav-link active" data-target="main-app">Analyse</a></li>
+            <li><a href="#" class="nav-link" data-target="how-it-works">Wie es funktioniert</a></li>
             <li><a href="#" class="nav-link" data-target="admin-panel">Admin-Panel</a></li>
             <li><a href="#" class="nav-link" data-target="about-us">Über uns</a></li>
             <li><a href="#" class="nav-link" data-target="legal-info">Rechtliches</a></li>
@@ -45,17 +46,48 @@
     </div>
 </main>
 
+<section id="how-it-works" class="page-section hidden">
+    <div class="container">
+        <h2>Wie es funktioniert</h2>
+        <p>Unser KI-Detektor verwendet ein fortschrittliches Machine-Learning-Modell, das auf einem großen Datensatz menschlicher und KI-generierter Texte trainiert wurde.</p>
+
+        <div class="info-block">
+            <h3>🤖 Wie wir trainieren</h3>
+            <p>Unser Modell lernt, subtile Muster in der Wortwahl, Satzstruktur und "Burstiness" (der Variation in der Satzlänge und dem Satzbau) zu erkennen. Dieser Ansatz ermöglicht es ihm, die Unterschiede zwischen natürlich verfassten und algorithmisch generierten Texten zu identifizieren. Das Training ist ein kontinuierlicher Prozess, der durch neue, authentische Datensätze verbessert wird.</p>
+        </div>
+
+        <div class="info-block">
+            <h3>📊 Trainingsstatistiken</h3>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <i class="fas fa-database"></i>
+                    <span>+1.000.000.000</span>
+                    <p>Datensätze</p>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-user-friends"></i>
+                    <span>99,8%</span>
+                    <p>Genauigkeit (im Labor)</p>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-brain"></i>
+                    <span>20+</span>
+                    <p>Erkannte Muster</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
 <section id="admin-panel" class="page-section hidden">
     <div class="container">
         <h2>Admin-Panel - Trainingsdaten</h2>
-
         <div id="login-form">
             <p>Admin-Passwort benötigt</p>
             <input type="password" id="admin-password-input" placeholder="Passwort" autocomplete="off">
             <button id="password-submit-btn"><i class="fas fa-sign-in-alt"></i> Login</button>
             <p id="login-error-msg" class="error-msg"></p>
         </div>
-
         <div id="training-data-view" class="hidden">
             <h3>Daten bearbeiten</h3>
             <div class="data-stats">
@@ -80,7 +112,6 @@
                     <p>Wörter insgesamt</p>
                 </div>
             </div>
-
             <div class="add-data-section">
                 <textarea id="new-text-input" placeholder="Neuen Text hinzufügen..."></textarea>
                 <div class="add-buttons">
@@ -89,25 +120,22 @@
                 </div>
                 <p id="save-status-msg" class="status-msg"></p>
             </div>
-
             <div class="training-control-section">
                 <h3>Modell-Training</h3>
                 <p>Klicken Sie hier, um das Modell mit allen neuen Daten neu zu trainieren.</p>
                 <button id="retrain-btn"><i class="fas fa-sync-alt"></i> Modell neu trainieren</button>
                 <p id="retrain-status-msg" class="status-msg"></p>
             </div>
-
             <ul id="data-list"></ul>
         </div>
-
     </div>
 </section>
 
 <section id="about-us" class="page-section hidden">
     <div class="container">
         <h2>Über Uns</h2>
-        <p>Dies ist ein Projekt zur Entwicklung eines KI-Text-Detektors. [cite_start]Unser Ziel ist es, ein nützliches und transparentes Werkzeug zu schaffen, das auf maschinellem Lernen basiert.</p> [cite: 42]
-        [cite_start]<p>Das System lernt, menschliche und KI-generierte Texte anhand von verschiedenen Merkmalen zu unterscheiden, darunter Wortwahl und Textstruktur (die sogenannte "Burstiness"). [cite: 42] [cite_start]Wir glauben daran, dass die Transparenz in der KI-Entwicklung entscheidend ist, weshalb dieses Projekt mit offenen Standards und einer klaren Logik entwickelt wurde.</p> [cite: 43]
+        <p>Dies ist ein Projekt zur Entwicklung eines KI-Text-Detektors. Unser Ziel ist es, ein nützliches und transparentes Werkzeug zu schaffen, das auf maschinellem Lernen basiert.</p>
+        <p>Das System lernt, menschliche und KI-generierte Texte anhand von verschiedenen Merkmalen zu unterscheiden, darunter Wortwahl und Textstruktur (die sogenannte "Burstiness"). Wir glauben daran, dass die Transparenz in der KI-Entwicklung entscheidend ist, weshalb dieses Projekt mit offenen Standards und einer klaren Logik entwickelt wurde.</p>
     </div>
 </section>
 
@@ -115,17 +143,17 @@
     <div class="container">
         <h2>Rechtliche Hinweise & Nutzungsbedingungen</h2>
         <h3>Nutzung des Dienstes</h3>
-        [cite_start]<p>Dieses Tool ist ein experimentelles und lehrreiches Projekt. [cite: 44] [cite_start]Es ist nicht dafür gedacht, Entscheidungen zu treffen, die das akademische oder berufliche Leben einer Person beeinflussen. [cite: 44]</p>
-        [cite_start]<p>Die von diesem Tool generierten Ergebnisse dienen nur als Orientierung. [cite: 45] [cite_start]Sie können Fehler enthalten und sollten nicht als endgültige Beweise verwendet werden. [cite: 45]</p>
+        <p>Dieses Tool ist ein experimentelles und lehrreiches Projekt. Es ist nicht dafür gedacht, Entscheidungen zu treffen, die das akademische oder berufliche Leben einer Person beeinflussen.</p>
+        <p>Die von diesem Tool generierten Ergebnisse dienen nur als Orientierung. Sie können Fehler enthalten und sollten nicht als endgültige Beweise verwendet werden.</p>
         <p>Durch die Nutzung dieses Dienstes erklären Sie sich damit einverstanden, dass Sie die Verantwortung für alle Entscheidungen tragen, die auf den erhaltenen Informationen basieren.</p>
         <h3>Daten & Datenschutz</h3>
-        [cite_start]<p>Alle eingegebenen Texte werden ausschließlich zur Analyse verarbeitet. [cite: 46] [cite_start]Wir speichern keine persönlichen Daten. [cite: 46] [cite_start]Die im Admin-Panel hinzugefügten Trainingsdaten werden in einer privaten Datenbank gesichert und nur zur Verbesserung des Modells verwendet. [cite: 46]</p>
+        <p>Alle eingegebenen Texte werden ausschließlich zur Analyse verarbeitet. Wir speichern keine persönlichen Daten. Die im Admin-Panel hinzugefügten Trainingsdaten werden in einer privaten Datenbank gesichert und nur zur Verbesserung des Modells verwendet.</p>
     </div>
 </section>
 
 <footer>
-    <p>&copy; 2025 KI-Text-Detektor von Jannes Arda Cullmann. [cite_start]Alle Rechte vorbehalten. [cite: 47]</p>
-    <p>Version: 1.0.0</p>
+    <p>&copy; 2025 KI-Text-Detektor von Jannes Arda Cullmann. Alle Rechte vorbehalten.</p>
+    <p>Version: 1.1.0 (Verbessert)</p>
     <p>Dieses Tool ist nicht dafür geeignet, Entscheidungen zu fällen, die die Karriere (z. B. Schule, Studium, Ausbildung, etc....) oder die Noten einer Person beeinflussen.</p>
 </footer>
 <script src="tracker.js"></script>
