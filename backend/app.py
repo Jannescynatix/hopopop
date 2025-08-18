@@ -190,12 +190,14 @@ def calculate_stats(data):
     for text in human_texts:
         words = text.split()
         stats['word_counts']['menschlich'] += len(words)
-        stats['char_counts']['menschlich'] += len(text)
+        # NEU: Leerzeichen entfernen, bevor die Zeichen gezählt werden
+        stats['char_counts']['menschlich'] += len(text.replace(" ", ""))
 
     for text in ki_texts:
         words = text.split()
         stats['word_counts']['ki'] += len(words)
-        stats['char_counts']['ki'] += len(text)
+        # NEU: Leerzeichen entfernen, bevor die Zeichen gezählt werden
+        stats['char_counts']['ki'] += len(text.replace(" ", ""))
 
     stats['word_counts']['total'] = stats['word_counts']['menschlich'] + stats['word_counts']['ki']
     stats['char_counts']['total'] = stats['char_counts']['menschlich'] + stats['char_counts']['ki']
