@@ -7,7 +7,8 @@ from pymongo import MongoClient
 import re
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.pipeline import Pipeline
-from sklearn.naive_bayes import MultinomialNB
+# WICHTIGE ÄNDERUNG: Importiere RandomForestClassifier statt MultinomialNB
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.compose import ColumnTransformer
 import numpy as np
@@ -17,6 +18,8 @@ from collections import Counter
 import os
 import bcrypt
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadTimeSignature
+# NEU: Importiere die Stoppwortliste
+from nltk.corpus import stopwords
 
 # Flask-App initialisieren
 app = Flask(__name__)
@@ -25,10 +28,10 @@ CORS(app)
 # --- NLTK-Daten herunterladen und überprüfen ---
 def download_nltk_data():
     """Lädt die NLTK-Daten herunter, falls sie nicht vorhanden sind."""
-    required_resources = ['punkt', 'punkt_tab']
+    required_resources = ['punkt', 'stopwords'] # NEU: Füge 'stopwords' hinzu
     for resource in required_resources:
         try:
-            nltk.data.find(f'tokenizers/{resource}')
+            nltk.data.find(f'tokenizers/{resource}' if resource == 'punkt' else f'corpora/{resource}')
             print(f"[LOG] NLTK-Daten '{resource}' bereits vorhanden.")
         except LookupError:
             print(f"[LOG] NLTK-Daten '{resource}' nicht gefunden. Starte Download...")
@@ -42,6 +45,9 @@ def download_nltk_data():
                 os.environ['NLTK_DATA'] = os.getcwd()
 
 download_nltk_data()
+
+# Lade die deutsche Stoppwortliste
+german_stopwords = stopwords.words('german')
 
 # Sicheres Passwort-Handling
 # Passwort-Hash aus Umgebungsvariable laden
@@ -79,12 +85,17 @@ class TextFeaturesExtractor(BaseEstimator, TransformerMixin):
         num_words = X.apply(lambda text: len(text.split()))
         avg_word_length = X.apply(lambda text: sum(len(word) for word in text.split()) / len(text.split()) if len(text.split()) > 0 else 0)
         burstiness = X.apply(lambda text: np.std([len(sentence.split()) for sentence in sent_tokenize(text)]) if len(sent_tokenize(text)) > 1 else 0)
+        # NEUE FEATURES: Zähle Satzzeichen und Ziffern
+        num_punctuation = X.apply(lambda text: len(re.findall(r'[.,;?!-]', text)))
+        num_digits = X.apply(lambda text: len(re.findall(r'\d', text)))
 
         return pd.DataFrame({
             'num_sentences': num_sentences,
             'num_words': num_words,
             'avg_word_length': avg_word_length,
-            'burstiness': burstiness
+            'burstiness': burstiness,
+            'num_punctuation': num_punctuation,
+            'num_digits': num_digits
         })
 
 # --- Daten- und Modell-Logik ---
@@ -133,9 +144,10 @@ def train_and_save_model():
         df = pd.DataFrame(training_data_list)
         print(f"[LOG] {len(df)} Datensätze für das Training geladen.")
 
+        # NEUE: Stoppwörter zum TfidfVectorizer hinzufügen
         preprocessor = ColumnTransformer(
             transformers=[
-                ('text_tfidf', TfidfVectorizer(ngram_range=(1, 3), max_features=1000), 'text'),
+                ('text_tfidf', TfidfVectorizer(ngram_range=(1, 3), max_features=1000, stop_words=german_stopwords), 'text'),
                 ('text_features', TextFeaturesExtractor(), 'text')
             ],
             remainder='passthrough'
@@ -143,7 +155,8 @@ def train_and_save_model():
 
         model = Pipeline(steps=[
             ('preprocessor', preprocessor),
-            ('classifier', MultinomialNB())
+            # WICHTIGE ÄNDERUNG: Nutze RandomForestClassifier
+            ('classifier', RandomForestClassifier(n_estimators=100, random_state=42))
         ])
 
         X = df[['text']]
@@ -190,13 +203,13 @@ def calculate_stats(data):
     for text in human_texts:
         words = text.split()
         stats['word_counts']['menschlich'] += len(words)
-        # NEU: Leerzeichen entfernen, bevor die Zeichen gezählt werden
+        # Leerzeichen entfernen, bevor die Zeichen gezählt werden
         stats['char_counts']['menschlich'] += len(text.replace(" ", ""))
 
     for text in ki_texts:
         words = text.split()
         stats['word_counts']['ki'] += len(words)
-        # NEU: Leerzeichen entfernen, bevor die Zeichen gezählt werden
+        # Leerzeichen entfernen, bevor die Zeichen gezählt werden
         stats['char_counts']['ki'] += len(text.replace(" ", ""))
 
     stats['word_counts']['total'] = stats['word_counts']['menschlich'] + stats['word_counts']['ki']
@@ -241,14 +254,15 @@ def predict():
         probabilities = model.predict_proba(text_df)[0]
         classes = model.classes_
 
-        mensch_prob = float(probabilities[classes == 'menschlich'])
-        ki_prob = float(probabilities[classes == 'ki'])
+        # Die Reihenfolge der Klassen kann variieren, daher suchen wir nach den richtigen Indizes
+        mensch_prob = probabilities[list(classes).index('menschlich')] * 100
+        ki_prob = probabilities[list(classes).index('ki')] * 100
 
-        print(f"[LOG] Vorhersage für Text: '{text[:30]}...'. Ergebnis: Menschlich: {round(mensch_prob * 100, 2)}%, KI: {round(ki_prob * 100, 2)}%")
+        print(f"[LOG] Vorhersage für Text: '{text[:30]}...'. Ergebnis: Menschlich: {round(mensch_prob, 2)}%, KI: {round(ki_prob, 2)}%")
 
         return jsonify({
-            'menschlich': round(mensch_prob * 100, 2),
-            'ki': round(ki_prob * 100, 2)
+            'menschlich': round(mensch_prob, 2),
+            'ki': round(ki_prob, 2)
         })
 
     except Exception as e:
