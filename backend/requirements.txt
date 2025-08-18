@@ -11,4 +11,7 @@ bcrypt
 itsdangerous
 python-dotenv
 textstat
+torch
+transformers
+sentencepiece
 
