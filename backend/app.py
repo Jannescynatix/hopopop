@@ -13,7 +13,9 @@ from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadTimeSignat
 # NEUE IMPORTE
 import torch
 from torch.utils.data import Dataset, DataLoader
-from transformers import DistilBertTokenizer, DistilBertForSequenceClassification, AdamW
+from transformers import DistilBertTokenizer, DistilBertForSequenceClassification
+# KORRIGIERTER IMPORT
+from torch.optim import AdamW
 import numpy as np
 
 # Flask-App initialisieren
@@ -135,7 +137,7 @@ def train_and_save_model():
 
         data_loader = DataLoader(dataset, batch_size=BATCH_SIZE)
 
-        optimizer = AdamW(model.parameters(), lr=2e-5, correct_bias=False)
+        optimizer = AdamW(model.parameters(), lr=2e-5) # KORRIGIERTE VERWENDUNG
 
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model = model.to(device)
