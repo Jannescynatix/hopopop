@@ -9,4 +9,6 @@ nltk
 numpy
 bcrypt
 itsdangerous
+python-dotenv
+textstat
 
