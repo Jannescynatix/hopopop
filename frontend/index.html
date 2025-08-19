@@ -18,6 +18,8 @@
             <li><a href="#" class="nav-link" data-target="admin-panel">Admin-Panel</a></li>
             <li><a href="#" class="nav-link" data-target="about-us">Über uns</a></li>
             <li><a href="#" class="nav-link" data-target="legal-info">Rechtliches</a></li>
+            <li><a href="#" class="nav-link" data-target="impressum">Impressum</a></li>
+            <li><a href="#" class="nav-link" data-target="contact">Kontakt</a></li>
         </ul>
         <button class="burger-menu" id="burger-menu">
             <i class="fas fa-bars"></i>
@@ -26,7 +28,7 @@
 </header>
 
 <main id="main-app" class="page-section active">
-    <div class="container">
+    <div class="container main-container">
         <h1>KI-Text-Detektor</h1>
         <p>Geben Sie einen Text ein, um die Wahrscheinlichkeit zu erfahren, ob er von einem Menschen oder einer KI geschrieben wurde.</p>
         <textarea id="text-input" placeholder="Geben Sie hier Ihren Text ein..." required></textarea>
@@ -43,6 +45,56 @@
             </div>
         </div>
     </div>
+    <section class="info-section">
+        <div class="container">
+            <h2>Wie unser Tool funktioniert</h2>
+            <p>Unser KI-Detektor analysiert Texte mit modernsten Methoden des maschinellen Lernens. Anstatt nur nach einfachen Mustern zu suchen, bewertet das Tool linguistische und stilistische Merkmale, die oft nur in menschlich verfassten Texten vorkommen.</p>
+            <div class="features-grid">
+                <div class="feature-card animate-on-scroll">
+                    <i class="fas fa-brain"></i>
+                    <h3>Fortgeschrittene Algorithmen</h3>
+                    <p>Wir verwenden ein leistungsstarkes BERT-Modell, das die Nuancen der deutschen Sprache versteht und subtile Unterschiede zwischen menschlicher und KI-Sprache erkennt.</p>
+                </div>
+                <div class="feature-card animate-on-scroll">
+                    <i class="fas fa-database"></i>
+                    <h3>Umfangreiche Trainingsdaten</h3>
+                    <p>Trainiert mit über <strong>1.000.000</strong> Wörtern aus menschlichen und KI-generierten Texten. Ihre Eingaben helfen uns, das Modell kontinuierlich zu verbessern.</p>
+                </div>
+                <div class="feature-card animate-on-scroll">
+                    <i class="fas fa-chart-line"></i>
+                    <h3>Transparente Analyse</h3>
+                    <p>Wir zeigen Ihnen nicht nur das Ergebnis, sondern auch die Wahrscheinlichkeiten. Unser Ziel ist es, ein nützliches und transparentes Werkzeug für alle zu sein.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="stats-section">
+        <div class="container">
+            <h2>Unser Fortschritt in Zahlen</h2>
+            <div class="stats-grid animate-on-scroll">
+                <div class="stat-box">
+                    <i class="fas fa-book-open"></i>
+                    <span id="total-word-count-front">0</span>
+                    <p>Wörter analysiert</p>
+                </div>
+                <div class="stat-box">
+                    <i class="fas fa-file-alt"></i>
+                    <span id="total-text-count-front">0</span>
+                    <p>Texte verarbeitet</p>
+                </div>
+                <div class="stat-box">
+                    <i class="fas fa-user-check"></i>
+                    <span id="human-text-count-front">0</span>
+                    <p>Menschliche Datensätze</p>
+                </div>
+                <div class="stat-box">
+                    <i class="fas fa-robot-x"></i>
+                    <span id="ki-text-count-front">0</span>
+                    <p>KI-Datensätze</p>
+                </div>
+            </div>
+        </div>
+    </section>
 </main>
 
 <section id="admin-panel" class="page-section hidden">
@@ -80,7 +132,7 @@
                 </div>
             </div>
 
-            <div class="stats-section">
+            <div class="stats-section admin-stats-section">
                 <h4>Erweiterte Statistiken <button id="refresh-stats-btn"><i class="fas fa-sync-alt"></i> Aktualisieren</button></h4>
                 <div class="stats-grid">
                     <div class="stat-card">
@@ -149,12 +201,72 @@
     </div>
 </section>
 
+<section id="impressum" class="page-section hidden">
+    <div class="container">
+        <h2>Impressum</h2>
+        <p>Angaben gemäß § 5 TMG</p>
+        <p>Jannes Arda Cullmann<br>
+            [Ihre Adresse]<br>
+            [Ihre PLZ und Ort]</p>
+        <p><strong>Kontakt:</strong><br>
+            E-Mail: [Ihre E-Mail-Adresse]<br>
+            Telefon: [Ihre Telefonnummer]</p>
+        <p><strong>Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV:</strong><br>
+            Jannes Arda Cullmann</p>
+    </div>
+</section>
+
+<section id="contact" class="page-section hidden">
+    <div class="container">
+        <h2>Kontakt</h2>
+        <p>Haben Sie Fragen oder Anregungen? Kontaktieren Sie uns gerne über die folgenden Kanäle:</p>
+        <div class="social-links-container">
+            <a href="#" class="social-link" aria-label="LinkedIn"><i class="fab fa-linkedin"></i> LinkedIn</a>
+            <a href="#" class="social-link" aria-label="GitHub"><i class="fab fa-github"></i> GitHub</a>
+            <a href="mailto:[Ihre E-Mail-Adresse]" class="social-link" aria-label="E-Mail"><i class="fas fa-envelope"></i> E-Mail</a>
+        </div>
+    </div>
+</section>
+
 <footer>
-    <p>&copy; 2025 KI-Text-Detektor von Jannes Arda Cullmann. Alle Rechte vorbehalten.</p>
-    <p>Version: 2.6.1</p>
-    <p>Dieses Tool ist nicht dafür geeignet, Entscheidungen zu fällen, die die Karriere (z. B. Schule, Studium, Ausbildung, etc....) oder die Noten einer Person beeinflussen.</p>
+    <div class="footer-container">
+        <div class="footer-section about-footer">
+            <h4>Über uns</h4>
+            <p>KI-Detektor ist ein Projekt zur Förderung der Transparenz im Bereich künstlicher Intelligenz.</p>
+        </div>
+        <div class="footer-section">
+            <h4>Seiten</h4>
+            <ul>
+                <li><a href="#" data-target="main-app">Analyse</a></li>
+                <li><a href="#" data-target="admin-panel">Admin-Panel</a></li>
+                <li><a href="#" data-target="about-us">Über uns</a></li>
+            </ul>
+        </div>
+        <div class="footer-section">
+            <h4>Rechtliches</h4>
+            <ul>
+                <li><a href="#" data-target="legal-info">Nutzungsbedingungen</a></li>
+                <li><a href="#" data-target="impressum">Impressum</a></li>
+                <li><a href="#">Datenschutz</a></li>
+            </ul>
+        </div>
+        <div class="footer-section social-footer">
+            <h4>Folgen Sie uns</h4>
+            <div class="social-icons">
+                <a href="#" aria-label="LinkedIn"><i class="fab fa-linkedin"></i></a>
+                <a href="#" aria-label="GitHub"><i class="fab fa-github"></i></a>
+                <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <p>&copy; 2025 KI-Text-Detektor. Alle Rechte vorbehalten.
+            <i class="fas fa-gem gem-icon"></i>
+            <br>
+            <small>Dieses Tool ist nicht geeignet, Entscheidungen zu fällen, die die Karriere oder die Noten einer Person beeinflussen.</small>
+        </p>
+    </div>
 </footer>
-<script src="tracker.js"></script>
 <script src="script.js"></script>
 </body>
 </html>

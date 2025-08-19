@@ -24,6 +24,9 @@ header {
     background-color: var(--secondary-color);
     padding: 1rem 2rem;
     box-shadow: var(--shadow-light);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
 }
 
 nav {
@@ -72,7 +75,28 @@ nav {
     font-size: 1.5rem;
     cursor: pointer;
     color: var(--primary-color);
+    z-index: 101;
+    position: relative;
+    top: 0;
+    right: 0;
 }
+
+/* Neue Stile für den Burger-Button */
+.burger-menu i {
+    transition: transform 0.3s ease;
+}
+
+.burger-menu.active .fa-bars {
+    display: none;
+}
+.burger-menu.active::before {
+    content: "\f00d"; /* FontAwesome X-Icon */
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    color: var(--primary-color);
+    font-size: 1.5rem;
+}
+
 
 main, section {
     padding: 4rem 2rem;
@@ -92,6 +116,24 @@ main, section {
     max-width: 700px;
     text-align: center;
     margin: 0 auto;
+}
+
+/* Neue Stile für die Info-Sektion */
+.main-container {
+    max-width: 900px;
+}
+
+.info-section, .stats-section, #contact, #impressum {
+    background: transparent;
+    box-shadow: none;
+    padding: 2rem 2rem;
+}
+
+.info-section .container, .stats-section .container {
+    padding: 2rem;
+    box-shadow: var(--shadow-medium);
+    background: var(--secondary-color);
+    text-align: center;
 }
 
 h1, h2 {
@@ -356,147 +398,93 @@ button i {
     color: #a71d2a;
 }
 
+/* Neuer Footer-Stil */
 footer {
-    text-align: center;
-    padding: 1.5rem;
-    background-color: var(--secondary-color);
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
-}
-
-.untrained-stat {
-    color: #ffc107;
-}
-
-.untrained-stat i, .untrained-stat span {
-    color: #ffc107;
-}
-
-/* Toast-Nachrichten */
-.toast-message {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 15px 25px;
-    border-radius: 8px;
+    background-color: #2c3e50;
     color: white;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    z-index: 1000;
-    opacity: 0;
-    transform: translateY(-20px);
-    transition: opacity 0.3s ease, transform 0.3s ease;
+    padding: 2rem 1rem;
+    text-align: center;
+    font-size: 0.9rem;
 }
 
-.toast-message.show {
-    opacity: 1;
-    transform: translateY(0);
+.footer-container {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    gap: 2rem;
 }
 
-.toast-info {
-    background-color: var(--primary-color);
+.footer-section {
+    min-width: 150px;
+    text-align: left;
 }
 
-.toast-success {
-    background-color: #28a745;
+.footer-section h4 {
+    color: #f0f4f8;
+    margin-bottom: 1rem;
+    font-weight: 600;
 }
 
-.toast-warning {
-    background-color: #ffc107;
+.footer-section p, .footer-section ul {
+    margin: 0;
+    padding: 0;
 }
 
-.toast-error {
-    background-color: #dc3545;
+.footer-section ul li {
+    list-style: none;
+    margin-bottom: 0.5rem;
 }
 
-/* NEUE MEDIA QUERIES FÜR MOBILE ANSICHT */
-@media (max-width: 768px) {
-    body {
-        font-size: 14px;
-    }
+.footer-section a {
+    color: #f0f4f8;
+    text-decoration: none;
+    transition: color 0.3s;
+}
 
-    header {
-        padding: 1rem;
-    }
+.footer-section a:hover {
+    color: var(--primary-color);
+}
 
-    .nav-menu {
-        flex-direction: column;
-        position: fixed;
-        top: 0;
-        right: -100%;
-        width: 100%;
-        height: 100%;
-        background-color: var(--bg-color);
-        padding-top: 5rem;
-        box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
-        transition: right 0.3s ease-in-out;
-        z-index: 99;
-    }
+.social-icons a {
+    font-size: 1.5rem;
+    margin-right: 1rem;
+    transition: color 0.3s;
+}
 
-    .nav-menu.active {
-        right: 0;
-    }
+.social-icons a:hover {
+    color: var(--primary-color);
+}
 
-    .nav-menu li {
-        margin: 1rem 0;
-    }
+.footer-bottom {
+    margin-top: 1.5rem;
+    font-size: 0.8rem;
+    color: #a0a0a0;
+}
 
-    .nav-link {
-        display: block;
-        padding: 1rem;
-        text-align: center;
-        font-size: 1.2rem;
-    }
-
-    .burger-menu {
-        display: block;
-        position: absolute;
-        top: 1rem;
-        right: 1rem;
-        z-index: 100;
-    }
-
-    .container {
-        padding: 2rem 1.5rem;
-    }
-
-    h1 {
-        font-size: 1.8rem;
-    }
-
-    h2 {
-        font-size: 1.5rem;
-    }
-
-    .data-stats {
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    .add-buttons {
-        flex-direction: column;
-    }
-
-    .add-buttons button {
-        margin-top: 0.5rem;
-        padding: 1rem;
-    }
-
-    .toast-message {
-        top: auto;
-        bottom: 20px;
-        right: 50%;
-        transform: translateX(50%);
-        width: 80%;
-        text-align: center;
-    }
+.gem-icon {
+    color: #6a1b9a; /* Ein auffälliger Lila-Ton */
+    font-size: 1.2em;
+    vertical-align: middle;
+    margin-left: 0.5rem;
 }
 
 .word-stat {
     background-color: #e6f3ff;
     color: var(--primary-color);
 }
-/* Zusätzliche Stile für Admin-Panel-Statistiken */
+.untrained-stat {
+    color: #ffc107;
+}
+.untrained-stat i, .untrained-stat span {
+    color: #ffc107;
+}
 
-.stats-section {
+/* Zusätzliche Stile für Admin-Panel-Statistiken */
+.stats-section.admin-stats-section {
     background-color: #f9f9f9;
     padding: 20px;
     border-radius: 8px;
@@ -505,7 +493,7 @@ footer {
     border-left: 5px solid #007bff;
 }
 
-.stats-section h4 {
+.stats-section.admin-stats-section h4 {
     margin-top: 0;
     display: flex;
     justify-content: space-between;
@@ -580,8 +568,136 @@ footer {
     color: #444;
 }
 
+/* Neue Animations-Stile */
+.animate-on-scroll {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.animate-on-scroll.in-view {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Toast-Nachrichten */
+.toast-message {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 25px;
+    border-radius: 8px;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    text-align: center; /* Zentriert den Text */
+}
+
+.toast-message.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.toast-info {
+    background-color: var(--primary-color);
+}
+
+.toast-success {
+    background-color: #28a745;
+}
+
+.toast-warning {
+    background-color: #ffc107;
+}
+
+.toast-error {
+    background-color: #dc3545;
+}
+
+/* Responsive Design */
 @media (max-width: 768px) {
+    body {
+        font-size: 14px;
+    }
+    header {
+        padding: 1rem;
+    }
+    .nav-menu {
+        flex-direction: column;
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: 100%;
+        height: 100%;
+        background-color: var(--bg-color);
+        padding-top: 5rem;
+        box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+        transition: right 0.3s ease-in-out;
+        z-index: 99;
+    }
+    .nav-menu.active {
+        right: 0;
+    }
+    .nav-menu li {
+        margin: 1rem 0;
+    }
+    .nav-link {
+        display: block;
+        padding: 1rem;
+        text-align: center;
+        font-size: 1.2rem;
+    }
+    .burger-menu {
+        display: block;
+        position: absolute;
+        top: 1.5rem;
+        right: 1rem;
+        z-index: 100;
+    }
+    .container {
+        padding: 2rem 1.5rem;
+    }
+    h1 {
+        font-size: 1.8rem;
+    }
+    h2 {
+        font-size: 1.5rem;
+    }
+    .data-stats {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    .add-buttons {
+        flex-direction: column;
+    }
+    .add-buttons button {
+        margin-top: 0.5rem;
+        padding: 1rem;
+    }
+    .toast-message {
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 90%;
+        height: auto;
+        padding: 1rem;
+    }
     .stats-grid {
         grid-template-columns: 1fr;
+    }
+    .footer-container {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    .footer-section {
+        min-width: 100%;
+        text-align: center;
+    }
+    .social-icons a {
+        margin: 0 0.5rem;
     }
 }
