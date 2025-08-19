@@ -12,5 +12,7 @@ itsdangerous
 python-dotenv
 textstat
 torch
+transformers
+
 
 
