@@ -1,243 +1,245 @@
-/* frontend/script.js */
+// frontend/script.js
+
 document.addEventListener('DOMContentLoaded', () => {
-    const textInput = document.getElementById('text-input');
-    const analyzeBtn = document.getElementById('analyze-btn');
-    const resultContainer = document.getElementById('result-container');
-    const resultText = document.getElementById('result-text');
-    const menschBar = document.querySelector('.mensch-bar');
-    const kiBar = document.querySelector('.ki-bar');
-    const menschLabel = document.getElementById('mensch-label');
-    const kiLabel = document.getElementById('ki-label');
-
-    const adminPasswordInput = document.getElementById('admin-password-input');
-    const passwordSubmitBtn = document.getElementById('password-submit-btn');
-    const loginForm = document.getElementById('login-form');
-    const loginErrorMsg = document.getElementById('login-error-msg');
-    const trainingDataView = document.getElementById('training-data-view');
-    const dataList = document.getElementById('data-list');
-    const newTextInput = document.getElementById('new-text-input');
-    const addHumanBtn = document.getElementById('add-human-btn');
-    const addKiBtn = document.getElementById('add-ki-btn');
-    const saveStatusMsg = document.getElementById('save-status-msg');
-    const retrainBtn = document.getElementById('retrain-btn');
-    const retrainStatusMsg = document.getElementById('retrain-status-msg');
-    const refreshStatsBtn = document.getElementById('refresh-stats-btn');
-
+    // Navigations-Elemente
     const navLinks = document.querySelectorAll('.nav-link');
-    const pageSections = document.querySelectorAll('.page-section');
+    const pages = document.querySelectorAll('.page-section');
+    const body = document.body;
     const burgerMenu = document.getElementById('burger-menu');
     const navMenu = document.querySelector('.nav-menu');
 
-    let adminToken = null;
+    // App-Elemente
+    const analyzeBtn = document.getElementById('analyze-btn');
+    const textInput = document.getElementById('text-input');
+    const resultContainer = document.getElementById('result-container');
+    const resultText = document.getElementById('result-text');
+    const kiBar = document.querySelector('.ki-bar');
+    const menschBar = document.querySelector('.mensch-bar');
+    const kiLabel = document.getElementById('ki-label');
+    const menschLabel = document.getElementById('mensch-label');
 
-    // Feste Werte für die Startseiten-Statistiken
-    const FRONTEND_STATS = {
-        total_words: 1000000,
-        total_texts: 15000,
-        human_texts: 7500,
-        ki_texts: 7500
-    };
+    // Admin-Panel-Elemente
+    const loginForm = document.getElementById('login-form');
+    const passwordInput = document.getElementById('admin-password-input');
+    const passwordSubmitBtn = document.getElementById('password-submit-btn');
+    const loginErrorMsg = document.getElementById('login-error-msg');
+    const trainingDataView = document.getElementById('training-data-view');
+    const newTextInput = document.getElementById('new-text-input');
+    const addHumanBtn = document.getElementById('add-human-btn');
+    const addKiBtn = document.getElementById('add-ki-btn');
+    const dataList = document.getElementById('data-list');
+    const humanCountSpan = document.getElementById('human-count');
+    const kiCountSpan = document.getElementById('ki-count');
+    const untrainiertCountSpan = document.getElementById('untrainiert-count');
+    const totalWordsSpan = document.getElementById('total-words');
+    const retrainBtn = document.getElementById('retrain-btn');
+    const refreshStatsBtn = document.getElementById('refresh-stats-btn'); // Neuer Button
 
-    // Funktion zur Anzeige von Toast-Nachrichten
-    function showToast(message, type = 'info') {
+    // Neue Statistik-Elemente
+    const humanWordCountSpan = document.getElementById('human-word-count');
+    const humanCharCountSpan = document.getElementById('human-char-count');
+    const kiWordCountSpan = document.getElementById('ki-word-count');
+    const kiCharCountSpan = document.getElementById('ki-char-count');
+    const totalWordCountSpan = document.getElementById('total-word-count');
+    const totalCharCountSpan = document.getElementById('total-char-count');
+    const avgHumanLengthSpan = document.getElementById('avg-human-length');
+    const avgKiLengthSpan = document.getElementById('avg-ki-length');
+    const frequentHumanWordsList = document.getElementById('frequent-human-words');
+    const frequentKiWordsList = document.getElementById('frequent-ki-words');
+    const frequentTotalWordsList = document.getElementById('frequent-total-words');
+
+    // WICHTIG: Ersetzen Sie DIESE URL durch die URL Ihrer gehosteten Render-App
+    const API_BASE_URL = 'https://b-kb9u.onrender.com';
+    let currentTrainingData = [];
+    let adminToken = localStorage.getItem('adminToken') || null;
+
+    // --- Allgemeine Hilfsfunktion für Toast-Nachrichten ---
+    function showToast(message, type = 'info', duration = 3000) {
+        // Entferne alte Toasts, falls vorhanden
+        const existingToast = document.querySelector('.toast-message');
+        if (existingToast) existingToast.remove();
+
         const toast = document.createElement('div');
         toast.className = `toast-message toast-${type}`;
         toast.textContent = message;
-        document.body.appendChild(toast);
+        body.appendChild(toast);
+
+        // Zeige den Toast an
         setTimeout(() => {
             toast.classList.add('show');
-        }, 100);
+        }, 10);
+
+        // Verstecke und entferne den Toast nach der Dauer
         setTimeout(() => {
             toast.classList.remove('show');
             setTimeout(() => {
                 toast.remove();
-            }, 300);
-        }, 3000);
+            }, 300); // Warte auf Fade-out
+        }, duration);
     }
 
-    // Funktion zur Navigation
-    function navigateTo(targetId) {
-        pageSections.forEach(section => {
-            section.classList.remove('active');
-            section.classList.add('hidden');
-        });
-        const targetSection = document.getElementById(targetId);
-        if (targetSection) {
-            targetSection.classList.remove('hidden');
-            targetSection.classList.add('active');
-        }
-    }
+    // --- Navigations-Logik ---
+    burgerMenu.addEventListener('click', () => {
+        navMenu.classList.toggle('active');
+    });
 
-    // Navigation-Logik
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
-            const targetId = e.target.getAttribute('data-target');
-            navigateTo(targetId);
+            const targetId = e.target.dataset.target;
 
-            // Setzt den aktiven Link
-            navLinks.forEach(l => l.classList.remove('active'));
+            // Schließe das Menü bei Klick (für mobile Ansicht)
+            navMenu.classList.remove('active');
+
+            pages.forEach(page => page.classList.remove('active'));
+            document.getElementById(targetId).classList.add('active');
+
+            navLinks.forEach(navLink => navLink.classList.remove('active'));
             link.classList.add('active');
 
-            // Schließt das mobile Menü
-            navMenu.classList.remove('active');
-            burgerMenu.classList.remove('active');
+            if (targetId === 'admin-panel') {
+                checkAdminSession();
+            }
         });
     });
 
-    // Burger-Menü-Logik
-    burgerMenu.addEventListener('click', () => {
-        navMenu.classList.toggle('active');
-        burgerMenu.classList.toggle('active');
-    });
-
-    // Haupt-Funktion für die Analyse
+    // --- Haupt-App-Logik ---
     analyzeBtn.addEventListener('click', async () => {
-        const text = textInput.value;
-        if (!text) {
-            showToast('Bitte geben Sie einen Text ein.', 'warning');
+        const text = textInput.value.trim();
+
+        if (text.length === 0) {
+            showToast('Bitte Text eingeben.', 'error');
             return;
         }
 
-        try {
-            const response = await fetch('http://127.0.0.1:5000/predict', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ text })
-            });
+        resultContainer.classList.add('hidden');
+        analyzeBtn.disabled = true;
+        analyzeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analysiere...';
 
+        try {
+            showToast('Text wird analysiert...', 'info', 2000);
+            const response = await fetch(`${API_BASE_URL}/predict`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: text })
+            });
             const data = await response.json();
 
-            if (data.error) {
-                showToast(data.error, 'error');
-                return;
+            if (response.ok) {
+                const kiProb = data.ki;
+                const menschProb = data.menschlich;
+                resultContainer.classList.remove('hidden');
+
+                if (kiProb > menschProb) {
+                    resultText.textContent = `Dieser Text wurde wahrscheinlich von einer KI generiert.`;
+                    showToast('Die Analyse ist abgeschlossen.', 'warning');
+                } else {
+                    resultText.textContent = `Dieser Text wurde wahrscheinlich von einem Menschen geschrieben.`;
+                    showToast('Die Analyse ist abgeschlossen.', 'success');
+                }
+
+                kiBar.style.width = `${kiProb}%`;
+                menschBar.style.width = `${menschProb}%`;
+                kiLabel.textContent = `KI: ${kiProb}%`;
+                menschLabel.textContent = `Menschlich: ${menschProb}%`;
+            } else {
+                showToast(`Fehler bei der Analyse: ${data.error}`, 'error');
+                resultText.textContent = `Fehler: ${data.error}`;
             }
-
-            const menschProb = data.menschlich;
-            const kiProb = data.ki;
-
-            resultContainer.classList.remove('hidden');
-            resultText.textContent = `Wahrscheinlichkeit: Menschlich: ${menschProb.toFixed(2)}% | KI: ${kiProb.toFixed(2)}%`;
-            menschBar.style.width = `${menschProb}%`;
-            kiBar.style.width = `${kiProb}%`;
-            menschLabel.textContent = `${menschProb.toFixed(2)}%`;
-            kiLabel.textContent = `${kiProb.toFixed(2)}%`;
-
         } catch (error) {
-            console.error('Fehler:', error);
-            showToast('Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.', 'error');
+            console.error('Fehler bei der API-Anfrage:', error);
+            showToast('Verbindungsproblem zur API.', 'error');
+            resultText.textContent = 'Es gab ein Problem bei der Verbindung zur API.';
+        } finally {
+            analyzeBtn.disabled = false;
+            analyzeBtn.innerHTML = '<i class="fas fa-search"></i> Analysieren';
         }
     });
 
-    // Funktion zum Abrufen und Anzeigen der Daten
-    const fetchDataAndDisplay = async (token) => {
-        try {
-            const response = await fetch('http://127.0.0.1:5000/get_data_status', {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+    // --- Admin-Logik ---
+    async function checkAdminSession() {
+        if (adminToken) {
+            // Versuche, mit dem gespeicherten Token Daten abzurufen
+            const response = await fetch(`${API_BASE_URL}/get_data_status`, {
+                headers: { 'Authorization': `Bearer ${adminToken}` }
             });
-            const data = await response.json();
-
-            if (data.error) {
-                showToast(data.error, 'error');
+            if (response.ok) {
+                const data = await response.json();
+                currentTrainingData = data.data;
+                updateStats(data.stats); // Zuerst die Statistiken aktualisieren
+                renderTrainingData(); // Dann die Daten rendern
+                loginForm.classList.add('hidden');
+                trainingDataView.classList.remove('hidden');
                 return;
             }
-
-            // Aktualisiere Admin-Panel Statistiken
-            document.getElementById('human-count').textContent = data.data.filter(d => d.label === 'menschlich').length;
-            document.getElementById('ki-count').textContent = data.data.filter(d => d.label === 'ki').length;
-            document.getElementById('untrainiert-count').textContent = data.data.filter(d => d.trained === false).length;
-            document.getElementById('total-words').textContent = data.stats.word_counts.total.toLocaleString('de-DE');
-
-            document.getElementById('human-word-count').textContent = data.stats.word_counts.menschlich.toLocaleString('de-DE');
-            document.getElementById('human-char-count').textContent = data.stats.char_counts.menschlich.toLocaleString('de-DE');
-            document.getElementById('ki-word-count').textContent = data.stats.word_counts.ki.toLocaleString('de-DE');
-            document.getElementById('ki-char-count').textContent = data.stats.char_counts.ki.toLocaleString('de-DE');
-            document.getElementById('total-word-count').textContent = data.stats.word_counts.total.toLocaleString('de-DE');
-            document.getElementById('total-char-count').textContent = data.stats.char_counts.total.toLocaleString('de-DE');
-            document.getElementById('avg-human-length').textContent = data.stats.avg_lengths.menschlich.toFixed(2);
-            document.getElementById('avg-ki-length').textContent = data.stats.avg_lengths.ki.toFixed(2);
-
-            const frequentHumanList = document.getElementById('frequent-human-words');
-            const frequentKiList = document.getElementById('frequent-ki-words');
-            const frequentTotalList = document.getElementById('frequent-total-words');
-
-            frequentHumanList.innerHTML = data.stats.frequent_words.menschlich.map(item => `<li>${item[0]} (${item[1]})</li>`).join('');
-            frequentKiList.innerHTML = data.stats.frequent_words.ki.map(item => `<li>${item[0]} (${item[1]})</li>`).join('');
-            frequentTotalList.innerHTML = data.stats.frequent_words.total.map(item => `<li>${item[0]} (${item[1]})</li>`).join('');
-
-            dataList.innerHTML = '';
-            data.data.forEach(item => {
-                const li = document.createElement('li');
-                li.innerHTML = `
-                    <span class="data-text ${item.trained ? '' : 'untrained-text'}">${item.text}</span>
-                    <span class="data-label">${item.label}</span>
-                    <div class="data-actions">
-                        <button class="delete-btn" data-text="${item.text}"><i class="fas fa-trash"></i></button>
-                    </div>
-                `;
-                dataList.appendChild(li);
-            });
-
-        } catch (error) {
-            console.error('Fehler beim Abrufen der Daten:', error);
-            showToast('Fehler beim Laden der Admin-Daten.', 'error');
         }
-    };
+        // Zeige Login-Formular, wenn kein Token oder ungültig
+        loginForm.classList.remove('hidden');
+        trainingDataView.classList.add('hidden');
+    }
 
-    // Admin-Login-Logik
     passwordSubmitBtn.addEventListener('click', async () => {
-        const password = adminPasswordInput.value;
+        const password = passwordInput.value;
         if (!password) {
+            showToast('Bitte Passwort eingeben.', 'error');
             loginErrorMsg.textContent = 'Bitte Passwort eingeben.';
             return;
         }
 
-        try {
-            const response = await fetch('http://127.0.0.1:5000/admin_login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ password })
-            });
+        passwordSubmitBtn.disabled = true;
+        passwordSubmitBtn.textContent = 'Logge ein...';
+        loginErrorMsg.textContent = '';
 
+        try {
+            const response = await fetch(`${API_BASE_URL}/admin_login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: password })
+            });
             const data = await response.json();
 
             if (response.ok) {
                 adminToken = data.token;
+                localStorage.setItem('adminToken', adminToken);
+                currentTrainingData = data.data;
+                updateStats(data.stats);
+                renderTrainingData();
                 loginForm.classList.add('hidden');
                 trainingDataView.classList.remove('hidden');
-                fetchDataAndDisplay(adminToken);
                 showToast('Login erfolgreich!', 'success');
             } else {
-                loginErrorMsg.textContent = data.error;
+                loginErrorMsg.textContent = data.error || 'Login fehlgeschlagen.';
+                showToast(`Login fehlgeschlagen: ${data.error}`, 'error');
             }
         } catch (error) {
-            console.error('Fehler:', error);
-            loginErrorMsg.textContent = 'Verbindungsfehler.';
+            loginErrorMsg.textContent = 'Verbindungsfehler zur API.';
+            console.error(error);
+            showToast('Verbindungsproblem zur API.', 'error');
+        } finally {
+            passwordSubmitBtn.disabled = false;
+            passwordSubmitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
         }
     });
 
-    // Daten hinzufügen
-    const handleAddData = async (label) => {
-        const text = newTextInput.value;
+    // Funktion zum Hinzufügen von Texten
+    async function addTextToList(label) {
+        const text = newTextInput.value.trim();
         if (!text) {
-            showToast('Bitte geben Sie einen Text zum Hinzufügen ein.', 'warning');
+            showToast('Bitte Text eingeben.', 'error');
+            return;
+        }
+        if (!adminToken) {
+            showToast('Fehler: Nicht angemeldet.', 'error');
+            checkAdminSession();
             return;
         }
 
-        if (!adminToken) {
-            showToast('Sitzung abgelaufen. Bitte neu einloggen.', 'warning');
-            return;
-        }
+        showToast('Füge Daten hinzu...', 'info');
+        addHumanBtn.disabled = true;
+        addKiBtn.disabled = true;
 
         try {
-            const response = await fetch('http://127.0.0.1:5000/add_data', {
+            const response = await fetch(`${API_BASE_URL}/add_data`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -246,116 +248,206 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ text, label })
             });
             const data = await response.json();
+
             if (response.ok) {
-                showToast(data.message, 'success');
+                currentTrainingData.push({ text, label, trained: false });
                 newTextInput.value = '';
-                fetchDataAndDisplay(adminToken);
+                await updateTrainingDataStatus();
+                showToast('✅ Daten erfolgreich zur Warteschlange hinzugefügt!', 'success');
             } else {
-                showToast(data.error, 'error');
+                showToast(`❌ Fehler: ${data.error}`, 'error');
+                if (response.status === 401) {
+                    adminToken = null;
+                    localStorage.removeItem('adminToken');
+                    checkAdminSession();
+                }
             }
         } catch (error) {
-            showToast('Fehler beim Hinzufügen der Daten.', 'error');
+            showToast('❌ Verbindungsproblem beim Hinzufügen.', 'error');
+        } finally {
+            addHumanBtn.disabled = false;
+            addKiBtn.disabled = false;
         }
-    };
+    }
 
-    addHumanBtn.addEventListener('click', () => handleAddData('menschlich'));
-    addKiBtn.addEventListener('click', () => handleAddData('ki'));
+    addHumanBtn.addEventListener('click', () => addTextToList('menschlich'));
+    addKiBtn.addEventListener('click', () => addTextToList('ki'));
 
-    // Daten löschen
-    dataList.addEventListener('click', async (e) => {
-        if (e.target.closest('.delete-btn')) {
-            const deleteBtn = e.target.closest('.delete-btn');
-            const textToDelete = deleteBtn.getAttribute('data-text');
-            if (!adminToken) {
-                showToast('Sitzung abgelaufen. Bitte neu einloggen.', 'warning');
-                return;
-            }
-
-            try {
-                const response = await fetch('http://127.0.0.1:5000/delete_data', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${adminToken}`
-                    },
-                    body: JSON.stringify({ text: textToDelete })
-                });
-                const data = await response.json();
-                if (response.ok) {
-                    showToast(data.message, 'success');
-                    fetchDataAndDisplay(adminToken);
-                } else {
-                    showToast(data.error, 'error');
-                }
-            } catch (error) {
-                showToast('Fehler beim Löschen der Daten.', 'error');
-            }
-        }
-    });
-
-    // Modell neu trainieren
-    retrainBtn.addEventListener('click', async () => {
+    // Funktion zum Löschen eines Texts
+    async function deleteText(text, index) {
         if (!adminToken) {
-            showToast('Sitzung abgelaufen. Bitte neu einloggen.', 'warning');
+            showToast('Fehler: Nicht angemeldet.', 'error');
+            checkAdminSession();
             return;
         }
 
-        showToast('Modelltraining gestartet. Dies kann einen Moment dauern.', 'info');
-        retrainStatusMsg.textContent = 'Training läuft...';
-        retrainBtn.disabled = true;
-
+        showToast('Lösche Daten...', 'info');
         try {
-            const response = await fetch('http://127.0.0.1:5000/retrain_model', {
+            const response = await fetch(`${API_BASE_URL}/delete_data`, {
                 method: 'POST',
                 headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${adminToken}`
+                },
+                body: JSON.stringify({ text })
+            });
+            const data = await response.json();
+
+            if (response.ok) {
+                currentTrainingData.splice(index, 1);
+                await updateTrainingDataStatus();
+                showToast('✅ Daten erfolgreich gelöscht!', 'success');
+            } else {
+                showToast(`❌ Fehler: ${data.error}`, 'error');
+                if (response.status === 401) {
+                    adminToken = null;
+                    localStorage.removeItem('adminToken');
+                    checkAdminSession();
+                }
+            }
+        } catch (error) {
+            showToast('❌ Verbindungsproblem beim Löschen.', 'error');
+        }
+    }
+
+    // Funktion zum Rendern der Trainingsdaten-Liste
+    function renderTrainingData() {
+        dataList.innerHTML = '';
+        let humanCount = 0;
+        let kiCount = 0;
+        let untrainedCount = 0;
+        currentTrainingData.forEach((item, index) => {
+            if (item.label === 'menschlich') humanCount++;
+            else kiCount++;
+            if (!item.trained) untrainedCount++;
+
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <span class="data-text ${item.trained ? '' : 'untrained-text'}">${item.text}</span>
+                <span class="data-actions">
+                    <span class="label ${item.label === 'ki' ? 'ki-label' : 'human-label'}">
+                        ${item.label.toUpperCase()}
+                    </span>
+                    <button class="delete-btn" data-text="${item.text}"><i class="fas fa-trash-alt"></i></button>
+                </span>
+            `;
+            dataList.appendChild(li);
+
+            const deleteBtn = li.querySelector('.delete-btn');
+            deleteBtn.addEventListener('click', () => deleteText(item.text, index));
+        });
+
+        humanCountSpan.textContent = humanCount;
+        kiCountSpan.textContent = kiCount;
+        untrainiertCountSpan.textContent = untrainedCount;
+        // Die folgende Zeile wurde entfernt, da 'wordCounts' nicht definiert war:
+        // totalWordsSpan.textContent = wordCounts.total;
+    }
+
+    function updateStats(stats) {
+        // Wort- und Zeichenanzahl
+        humanWordCountSpan.textContent = stats.word_counts.menschlich;
+        humanCharCountSpan.textContent = stats.char_counts.menschlich;
+        kiWordCountSpan.textContent = stats.word_counts.ki;
+        kiCharCountSpan.textContent = stats.char_counts.ki;
+        totalWordCountSpan.textContent = stats.word_counts.total;
+        totalCharCountSpan.textContent = stats.char_counts.total;
+
+        // Durchschnittliche Länge
+        avgHumanLengthSpan.textContent = stats.avg_lengths.menschlich.toFixed(2);
+        avgKiLengthSpan.textContent = stats.avg_lengths.ki.toFixed(2);
+
+        // Häufigste Wörter
+        updateFrequentWordsList(frequentHumanWordsList, stats.frequent_words.menschlich);
+        updateFrequentWordsList(frequentKiWordsList, stats.frequent_words.ki);
+        updateFrequentWordsList(frequentTotalWordsList, stats.frequent_words.total);
+    }
+
+    function updateFrequentWordsList(listElement, words) {
+        listElement.innerHTML = '';
+        words.forEach(item => {
+            const li = document.createElement('li');
+            li.textContent = `${item[0]} (${item[1]})`;
+            listElement.appendChild(li);
+        });
+    }
+
+    // Funktion zum Neu-Trainieren des Modells
+    retrainBtn.addEventListener('click', async () => {
+        if (!adminToken) {
+            showToast('Fehler: Nicht angemeldet.', 'error');
+            checkAdminSession();
+            return;
+        }
+
+        showToast('Modell-Training gestartet...', 'info');
+        retrainBtn.disabled = true;
+        retrainBtn.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Trainiere...';
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/retrain_model`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
                     'Authorization': `Bearer ${adminToken}`
                 }
             });
             const data = await response.json();
+
             if (response.ok) {
-                showToast(data.message, 'success');
-                retrainStatusMsg.textContent = 'Training abgeschlossen!';
-                fetchDataAndDisplay(adminToken);
+                showToast('✅ Modell-Training gestartet. Schau in die Logs für Details!', 'success', 5000);
+                setTimeout(updateTrainingDataStatus, 3000); // Warte 3s, bis DB-Update
             } else {
-                showToast(data.error, 'error');
-                retrainStatusMsg.textContent = `Fehler: ${data.error}`;
+                showToast(`❌ Fehler: ${data.error}`, 'error');
+                if (response.status === 401) {
+                    adminToken = null;
+                    localStorage.removeItem('adminToken');
+                    checkAdminSession();
+                }
             }
         } catch (error) {
-            showToast('Fehler beim Neu-Trainieren.', 'error');
-            retrainStatusMsg.textContent = 'Fehler beim Neu-Trainieren.';
+            showToast('❌ Verbindungsproblem beim Training.', 'error');
         } finally {
             retrainBtn.disabled = false;
+            retrainBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Modell neu trainieren';
         }
     });
 
-    // Statistiken aktualisieren
-    if (refreshStatsBtn) {
-        refreshStatsBtn.addEventListener('click', () => {
-            if (adminToken) {
-                fetchDataAndDisplay(adminToken);
-                showToast('Statistiken aktualisiert.', 'info');
+    // Neue Funktion: Aktualisiert alle Daten und Statistiken
+    async function updateTrainingDataStatus() {
+        if (!adminToken) {
+            console.log("Nicht angemeldet, kann Datenstatus nicht aktualisieren.");
+            return;
+        }
+        try {
+            const response = await fetch(`${API_BASE_URL}/get_data_status`, {
+                headers: { 'Authorization': `Bearer ${adminToken}` }
+            });
+            const data = await response.json();
+            if (response.ok) {
+                currentTrainingData = data.data;
+                updateStats(data.stats);
+                renderTrainingData();
             } else {
-                showToast('Bitte loggen Sie sich ein, um Statistiken zu aktualisieren.', 'warning');
+                console.error("Fehler beim Abrufen der Daten:", data.error);
+                showToast(`Fehler beim Aktualisieren des Datenstatus: ${data.error}`, 'error');
+                if (response.status === 401) {
+                    adminToken = null;
+                    localStorage.removeItem('adminToken');
+                    checkAdminSession();
+                }
             }
-        });
+        } catch (error) {
+            console.error("Fehler beim Abrufen der Daten:", error);
+            showToast('Verbindungsproblem beim Abrufen des Datenstatus.', 'error');
+        }
     }
 
-    // Scroll-Animationen
-    const animateElements = document.querySelectorAll('.animate-on-scroll');
-    const observer = new IntersectionObserver((entries, observer) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('in-view');
-                observer.unobserve(entry.target);
-            }
-        });
-    }, { threshold: 0.1 });
+    // Event-Listener für den Aktualisieren-Button
+    refreshStatsBtn.addEventListener('click', updateTrainingDataStatus);
 
-    animateElements.forEach(el => observer.observe(el));
-
-    // Hardcode-Werte für die Startseite einfügen
-    document.getElementById('total-word-count-front').textContent = (FRONTEND_STATS.total_words).toLocaleString('de-DE');
-    document.getElementById('total-text-count-front').textContent = (FRONTEND_STATS.total_texts).toLocaleString('de-DE');
-    document.getElementById('human-text-count-front').textContent = (FRONTEND_STATS.human_texts).toLocaleString('de-DE');
-    document.getElementById('ki-text-count-front').textContent = (FRONTEND_STATS.ki_texts).toLocaleString('de-DE');
+    // Initialen Check beim Laden der Seite
+    if (document.getElementById('admin-panel').classList.contains('active')) {
+        checkAdminSession();
+    }
 });
